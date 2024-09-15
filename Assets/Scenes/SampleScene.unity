@@ -524,6 +524,16 @@ MonoBehaviour:
   tileSize: 1
   yOffset: 0.1
   boardCenter: {x: 0, y: 0, z: 0}
+  prefabs:
+  - {fileID: 8385778544984517574, guid: 5e2f425a4335cd8428cf4373078d4924, type: 3}
+  - {fileID: 4172319373074576376, guid: 2337f1323b25c834183fb5bce08cdc4a, type: 3}
+  - {fileID: 1234321069606659581, guid: 6b856399df532b648af9247bdb594fa8, type: 3}
+  - {fileID: 9062362832498608937, guid: deb57418d02632e41b906b92b9fdb9cd, type: 3}
+  - {fileID: 6278865568535691943, guid: 3d1170e428b4b6c49acc7b72ec1fd83f, type: 3}
+  - {fileID: 3311667488009234568, guid: 9406d74a1e485ff4c8dad0f0dea9fb79, type: 3}
+  teamMaterials:
+  - {fileID: 2100000, guid: 956fc6a93aeaa8547829e0b99cf2c9ab, type: 2}
+  - {fileID: 2100000, guid: 6c6e4078c3070b647a39eb2d54891b7d, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
