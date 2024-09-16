@@ -2,6 +2,13 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum SpecialMove {
+    None = 0,
+    EnPassant,
+    Castling,
+    Promotion
+}
+
 public class Chessboard : MonoBehaviour
 {
     [Header("Art stuff")]
@@ -31,6 +38,8 @@ public class Chessboard : MonoBehaviour
     private Vector2Int currentHover;
     private Vector3 bounds;
     private bool isWhiteTurn;
+    private SpecialMove specialMove;
+    private List<Vector2Int[]> moveList = new List<Vector2Int[]>();
 
     private void Awake() {
         isWhiteTurn = true;
@@ -74,6 +83,9 @@ public class Chessboard : MonoBehaviour
 
                         // Get a list of where I can go, highlight tiles as well
                         availableMoves = currentlyDragging.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
+                        // Get a list of special moves as well
+                        specialMove = currentlyDragging.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves);
+
                         HighlightTiles();
                     }
                 }
@@ -87,8 +99,8 @@ public class Chessboard : MonoBehaviour
                 if (!validMove)
                     currentlyDragging.SetPosition(GetTileCenter(previousPosition.x, previousPosition.y));
 
-                RemoveHighlightTiles();
                 currentlyDragging = null;
+                RemoveHighlightTiles();
             }
 
         } else {
@@ -243,7 +255,8 @@ public class Chessboard : MonoBehaviour
 
         // Fields reset
         currentlyDragging = null;
-        availableMoves = new List<Vector2Int>();
+        availableMoves.Clear();
+        moveList.Clear();
 
         // Clean up
 
@@ -273,8 +286,41 @@ public class Chessboard : MonoBehaviour
         Application.Quit();
     }
 
+    // Special Moves
+    private void ProcessSpecialMove() {
+        if(specialMove == SpecialMove.EnPassant) {
+            Vector2Int[] newMove = moveList[moveList.Count - 1];
+            ChessPiece myPawn = chessPieces[newMove[1].x, newMove[1].y];
+            Vector2Int[] targetPawnPosition = moveList[moveList.Count - 2];
+            ChessPiece enemyPawn = chessPieces[targetPawnPosition[1].x, targetPawnPosition[1].y];
+
+            if (myPawn.currentX == enemyPawn.currentX) {
+                if(myPawn.currentY == enemyPawn.currentY - 1 || myPawn.currentY == enemyPawn.currentY + 1) {
+                    if(enemyPawn.team == 0) {
+                        deadWhites.Add(enemyPawn);
+                        enemyPawn.SetScale(Vector3.one * deathSize);
+                        enemyPawn.SetPosition(
+                            new Vector3(8 * tileSize, yOffset, -1 * tileSize)
+                            - bounds
+                            + new Vector3(tileSize / 2, 0, tileSize / 2)
+                            + (Vector3.forward * deathSpacing) * deadWhites.Count);
+                    } else {
+                        deadBlacks.Add(enemyPawn);
+                        enemyPawn.SetScale(Vector3.one * deathSize);
+                        enemyPawn.SetPosition(
+                            new Vector3(-1 * tileSize, yOffset, 8 * tileSize)
+                            - bounds
+                            + new Vector3(tileSize / 2, 0, tileSize / 2)
+                            + (Vector3.back * deathSpacing) * deadBlacks.Count);
+                    }
+                    chessPieces[enemyPawn.currentX, enemyPawn.currentY] = null;
+                }
+            }
+        }
+    }
+
     // Operations
-    private bool ContainsValidMoves(ref List<Vector2Int> moves, Vector2 pos) {
+    private bool ContainsValidMoves(ref List<Vector2Int> moves, Vector2Int pos) {
         for (int i = 0; i < moves.Count; i++)
             if (moves[i].x == pos.x && moves[i].y == pos.y)
                 return true;
@@ -282,7 +328,7 @@ public class Chessboard : MonoBehaviour
         return false;
     }
     private bool MoveTo(ChessPiece cp, int x, int y) {
-        if(!ContainsValidMoves(ref availableMoves, new Vector2(x, y)))
+        if(!ContainsValidMoves(ref availableMoves, new Vector2Int(x, y)))
             return false;
 
         Vector2Int previousPosition = new Vector2Int(cp.currentX, cp.currentY);
@@ -326,6 +372,9 @@ public class Chessboard : MonoBehaviour
         PositionSinglePiece(x, y);
 
         isWhiteTurn = !isWhiteTurn;
+        moveList.Add(new Vector2Int[] { previousPosition, new Vector2Int(x, y) });
+
+        ProcessSpecialMove();
 
         return true;
     }
