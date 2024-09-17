@@ -62,6 +62,7 @@
     <Compile Include="Assets\Free Low Poly Chess Set\Example\Scripts\CameraRotate.cs" />
     <Compile Include="Assets\Scripts\Chessboard.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\ChessPiece.cs" />
+    <Compile Include="Assets\Scripts\GameUI.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\King.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Knight.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Rook.cs" />
