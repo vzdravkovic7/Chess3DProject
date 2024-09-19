@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using UnityEngine;
@@ -35,14 +34,16 @@ public class Client : MonoBehaviour {
     }
 
     public void Shutdown() {
-        if (isActive) {
-            UnregisterToEvent();
-            if (driver.IsCreated) {
-                driver.Dispose();
-            }
-            isActive = false;
-            connection = default(NetworkConnection);
+        if (!isActive) return;
+
+        UnregisterToEvent();
+
+        if (driver.IsCreated) {
+            driver.Dispose();
         }
+
+        isActive = false;
+        connection = default(NetworkConnection);
     }
 
     public void OnDestroy() {
@@ -50,7 +51,7 @@ public class Client : MonoBehaviour {
     }
 
     public void Update() {
-        if (!isActive || !driver.IsCreated) {
+        if (!isActive || !driver.IsCreated || !connection.IsCreated) {
             return;
         }
 
@@ -61,36 +62,43 @@ public class Client : MonoBehaviour {
 
     private void CheckAlive() {
         if (!connection.IsCreated && isActive) {
-            Debug.Log("Something went wrong, lost connection to server");
+            Debug.LogWarning("Something went wrong, lost connection to server");
             connectionDropped?.Invoke();
-            Shutdown();
         }
     }
 
     private void UpdateMessagePump() {
-        if (!connection.IsCreated || !driver.IsCreated) {
+        if (!isActive || !driver.IsCreated || !connection.IsCreated) {
             return;
         }
 
-        DataStreamReader stream;
-        NetworkEvent.Type cmd;
-        while ((cmd = connection.PopEvent(driver, out stream)) != NetworkEvent.Type.Empty) {
-            if (cmd == NetworkEvent.Type.Connect) {
-                SendToServer(new NetWelcome());
-                Debug.Log("We're connected!");
-            } else if (cmd == NetworkEvent.Type.Data) {
-                NetUtility.OnData(stream, default(NetworkConnection));
-            } else if (cmd == NetworkEvent.Type.Disconnect) {
-                Debug.Log("Client got disconnected from server");
-                connection = default(NetworkConnection);
-                connectionDropped?.Invoke();
-                Shutdown();
+        try {
+            DataStreamReader stream;
+            NetworkEvent.Type cmd;
+
+            while ((cmd = connection.PopEvent(driver, out stream)) != NetworkEvent.Type.Empty) {
+                if (cmd == NetworkEvent.Type.Connect) {
+                    SendToServer(new NetWelcome());
+                    Debug.Log("We're connected!");
+                } else if (cmd == NetworkEvent.Type.Data) {
+                    NetUtility.OnData(stream, default(NetworkConnection));
+                } else if (cmd == NetworkEvent.Type.Disconnect) {
+                    Debug.LogWarning("Client got disconnected from server");
+                    connection = default(NetworkConnection);
+                    connectionDropped?.Invoke();
+                }
             }
+        } catch (ObjectDisposedException e) {
+            Debug.LogWarning($"Caught ObjectDisposedException: {e.Message}");
+            // No shutdown here, just logging
+        } catch (Exception e) {
+            Debug.LogWarning($"Unexpected error: {e.Message}");
+            // No shutdown here either, just logging
         }
     }
 
-    private void SendToServer(NetMessage msg) {
-        if (!driver.IsCreated || !connection.IsCreated) {
+    public void SendToServer(NetMessage msg) {
+        if (!isActive || !driver.IsCreated || !connection.IsCreated) {
             return;
         }
 

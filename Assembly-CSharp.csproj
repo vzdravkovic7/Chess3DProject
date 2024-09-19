@@ -69,7 +69,9 @@
     <Compile Include="Assets\Scripts\GameUI.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\King.cs" />
     <Compile Include="Assets\Scripts\Net\Client.cs" />
+    <Compile Include="Assets\Scripts\Net\NetMessage\NetRematch.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Knight.cs" />
+    <Compile Include="Assets\Scripts\Net\NetMessage\NetMakeMove.cs" />
     <Compile Include="Assets\Scripts\Net\NetMessage\NetKeepAlive.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Rook.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Pawn.cs" />

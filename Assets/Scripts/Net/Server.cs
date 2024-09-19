@@ -16,7 +16,7 @@ public class Server : MonoBehaviour {
     private NativeList<NetworkConnection> connections;
 
     private bool isActive = false;
-    private const float keepAliveTickRate = 20.0f;
+    private const float keepAliveTickRate = 15.0f;
     private float lastKeepAlive;
 
     public Action connectionDropped;
@@ -28,7 +28,7 @@ public class Server : MonoBehaviour {
         endpoint.Port = port;
 
         if (driver.Bind(endpoint) != 0) {
-            Debug.Log("Unable to bind on port " + endpoint.Port);
+            Debug.LogWarning("Unable to bind on port " + endpoint.Port);
             return;
         } else {
             driver.Listen();
@@ -43,19 +43,19 @@ public class Server : MonoBehaviour {
     }
 
     public void Shutdown() {
-        if (isActive) {
-            if (driver.IsCreated) {
-                driver.Dispose();
-            }
-            if (connections.IsCreated) {
-                connections.Dispose();
-            }
+        if (!isActive) return;
 
-            // Unregister the keep-alive event handler
-            NetUtility.S_KEEP_ALIVE -= OnKeepAliveReceived;
-
-            isActive = false;
+        if (driver.IsCreated) {
+            driver.Dispose();
         }
+        if (connections.IsCreated) {
+            connections.Dispose();
+        }
+
+        // Unregister the keep-alive event handler
+        NetUtility.S_KEEP_ALIVE -= OnKeepAliveReceived;
+
+        isActive = false;
     }
 
     public void OnDestroy() {
@@ -83,10 +83,9 @@ public class Server : MonoBehaviour {
     }
 
     private void CleanupConnections() {
-        for (int i = 0; i < connections.Length; i++) {
+        for (int i = connections.Length - 1; i >= 0; i--) {
             if (!connections[i].IsCreated) {
                 connections.RemoveAtSwapBack(i);
-                --i;
             }
         }
     }
@@ -99,6 +98,7 @@ public class Server : MonoBehaviour {
         NetworkConnection c;
         while ((c = driver.Accept()) != default(NetworkConnection)) {
             connections.Add(c);
+            Debug.Log($"Accepted new connection from {c}");
         }
     }
 
@@ -111,16 +111,15 @@ public class Server : MonoBehaviour {
         for (int i = 0; i < connections.Length; i++) {
             NetworkEvent.Type cmd;
             while ((cmd = driver.PopEventForConnection(connections[i], out stream)) != NetworkEvent.Type.Empty) {
-                if (cmd == NetworkEvent.Type.Data) {
-                    NetUtility.OnData(stream, connections[i], this);
-                } else if (cmd == NetworkEvent.Type.Disconnect) {
-                    Debug.Log("Client disconnected from server");
-                    connections[i] = default(NetworkConnection);
-                    connectionDropped?.Invoke();
-
-                    if (connections.Length == 0) {
-                        Shutdown(); // Shutdown if all clients are disconnected
-                    }
+                switch (cmd) {
+                    case NetworkEvent.Type.Data:
+                        NetUtility.OnData(stream, connections[i], this);
+                        break;
+                    case NetworkEvent.Type.Disconnect:
+                        Debug.LogWarning($"Client {connections[i]} disconnected from server");
+                        connections[i] = default(NetworkConnection);
+                        connectionDropped?.Invoke();
+                        break;
                 }
             }
         }
