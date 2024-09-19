@@ -17,8 +17,8 @@ public static class NetUtility
         var opCode = (OpCode)stream.ReadByte();
         switch (opCode) {
             case OpCode.KEEP_ALIVE: msg = new NetKeepAlive(stream); break;
-            //case OpCode.WELCOME: msg = new NetWelcome(stream); break;
-            //case OpCode.START_GAME: msg = new NetStartGame(stream); break;
+            case OpCode.WELCOME: msg = new NetWelcome(stream); break;
+            case OpCode.START_GAME: msg = new NetStartGame(stream); break;
             //case OpCode.MAKE_MOVE: msg = new NetMakeMove(stream); break;
             //case OpCode.REMATCH: msg = new NetRematch(stream); break;
             default:
@@ -26,7 +26,12 @@ public static class NetUtility
                 break;
         }
 
-        if(server != null)
+        if (msg == null) {
+            Debug.LogError("Received unknown message with invalid or unsupported OpCode");
+            return;
+        }
+
+        if (server != null)
             msg.ReceivedOnServer(cnn);
         else
             msg.ReceivedOnClient();

@@ -25,6 +25,10 @@ public class NetKeepAlive : NetMessage
     }
 
     public override void ReceivedOnServer(NetworkConnection cnn) {
-        NetUtility.S_KEEP_ALIVE.Invoke(this, cnn);
+        if (NetUtility.S_KEEP_ALIVE != null) {
+            NetUtility.S_KEEP_ALIVE.Invoke(this, cnn);
+        } else {
+            UnityEngine.Debug.LogWarning("S_KEEP_ALIVE handler is not assigned.");
+        }
     }
 }

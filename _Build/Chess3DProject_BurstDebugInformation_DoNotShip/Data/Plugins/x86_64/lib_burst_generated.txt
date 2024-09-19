@@ -26,6 +26,7 @@ Library: C:\Users\KORISNIK\Documents\GitHub\Chess3DProject\Temp\BurstOutput\Data
 --assembly-defines=Unity.TextMeshPro;
 --assembly-defines=Unity.RenderPipelines.Universal.Shaders;
 --assembly-defines=Unity.VisualScripting.State;
+--assembly-defines=Cinemachine;
 --assembly-defines=Unity.Collections.LowLevel.ILSupport;
 --assembly-defines=Unity.VisualScripting.Antlr3.Runtime;
 --assembly-defines=Unity.Burst.Unsafe;
@@ -89,6 +90,7 @@ Library: C:\Users\KORISNIK\Documents\GitHub\Chess3DProject\Temp\BurstOutput\Data
 --assembly-defines=Unity.TextMeshPro;
 --assembly-defines=Unity.RenderPipelines.Universal.Shaders;
 --assembly-defines=Unity.VisualScripting.State;
+--assembly-defines=Cinemachine;
 --assembly-defines=Unity.Collections.LowLevel.ILSupport;
 --assembly-defines=Unity.VisualScripting.Antlr3.Runtime;
 --assembly-defines=Unity.Burst.Unsafe;
@@ -150,6 +152,7 @@ Library: C:\Users\KORISNIK\Documents\GitHub\Chess3DProject\Temp\BurstOutput\Data
 --assembly-defines=Unity.TextMeshPro;
 --assembly-defines=Unity.RenderPipelines.Universal.Shaders;
 --assembly-defines=Unity.VisualScripting.State;
+--assembly-defines=Cinemachine;
 --assembly-defines=Unity.Collections.LowLevel.ILSupport;
 --assembly-defines=Unity.VisualScripting.Antlr3.Runtime;
 --assembly-defines=Unity.Burst.Unsafe;
@@ -287,6 +290,7 @@ Library: C:\Users\KORISNIK\Documents\GitHub\Chess3DProject\Temp\BurstOutput\Data
 --assembly-defines=Unity.TextMeshPro;
 --assembly-defines=Unity.RenderPipelines.Universal.Shaders;
 --assembly-defines=Unity.VisualScripting.State;
+--assembly-defines=Cinemachine;
 --assembly-defines=Unity.Collections.LowLevel.ILSupport;
 --assembly-defines=Unity.VisualScripting.Antlr3.Runtime;
 --assembly-defines=Unity.Burst.Unsafe;

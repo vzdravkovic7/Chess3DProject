@@ -4,8 +4,7 @@ using Unity.Collections;
 using Unity.Networking.Transport;
 using UnityEngine;
 
-public class Client : MonoBehaviour
-{
+public class Client : MonoBehaviour {
     #region Singleton implementation
     public static Client Instance { get; set; }
 
@@ -38,7 +37,9 @@ public class Client : MonoBehaviour
     public void Shutdown() {
         if (isActive) {
             UnregisterToEvent();
-            driver.Dispose();
+            if (driver.IsCreated) {
+                driver.Dispose();
+            }
             isActive = false;
             connection = default(NetworkConnection);
         }
@@ -49,7 +50,7 @@ public class Client : MonoBehaviour
     }
 
     public void Update() {
-        if (!isActive) {
+        if (!isActive || !driver.IsCreated) {
             return;
         }
 
@@ -67,11 +68,15 @@ public class Client : MonoBehaviour
     }
 
     private void UpdateMessagePump() {
+        if (!connection.IsCreated || !driver.IsCreated) {
+            return;
+        }
+
         DataStreamReader stream;
         NetworkEvent.Type cmd;
         while ((cmd = connection.PopEvent(driver, out stream)) != NetworkEvent.Type.Empty) {
             if (cmd == NetworkEvent.Type.Connect) {
-                // SendToServer(new NetWelcome());
+                SendToServer(new NetWelcome());
                 Debug.Log("We're connected!");
             } else if (cmd == NetworkEvent.Type.Data) {
                 NetUtility.OnData(stream, default(NetworkConnection));
@@ -85,6 +90,10 @@ public class Client : MonoBehaviour
     }
 
     private void SendToServer(NetMessage msg) {
+        if (!driver.IsCreated || !connection.IsCreated) {
+            return;
+        }
+
         DataStreamWriter writer;
         driver.BeginSend(connection, out writer);
         msg.Serialize(ref writer);
@@ -92,7 +101,6 @@ public class Client : MonoBehaviour
     }
 
     // Event parsing
-
     private void RegisterToEvent() {
         NetUtility.C_KEEP_ALIVE += OnKeepAlive;
     }
@@ -102,7 +110,7 @@ public class Client : MonoBehaviour
     }
 
     private void OnKeepAlive(NetMessage nm) {
-        // Send it back, to keep both side alive
+        // Send it back, to keep both sides alive
         SendToServer(nm);
     }
 }
