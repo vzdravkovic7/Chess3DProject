@@ -24,7 +24,7 @@ public class Client : MonoBehaviour {
         driver = NetworkDriver.Create();
         NetworkEndpoint endpoint = NetworkEndpoint.Parse(ip, port);
 
-        connection = driver.Connect(endpoint);
+        connection = driver.Connect(endpoint); // LOCAL HOSTING localhost / 127.0.0.1
 
         Debug.Log("Attempting to connect to Server on " + endpoint.Address);
 
