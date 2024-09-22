@@ -8,7 +8,8 @@ public enum OpCode {
     WELCOME = 2,
     START_GAME = 3,
     MAKE_MOVE = 4,
-    REMATCH = 5
+    REMATCH = 5,
+    PROMOTION = 6
 }
 
 public static class NetUtility {
@@ -21,6 +22,7 @@ public static class NetUtility {
             case OpCode.START_GAME: msg = new NetStartGame(stream); break;
             case OpCode.MAKE_MOVE: msg = new NetMakeMove(stream); break;
             case OpCode.REMATCH: msg = new NetRematch(stream); break;
+            case OpCode.PROMOTION: msg = new NetPromotion(stream); break;
             default:
                 Debug.LogError("Message received has no OpCode");
                 break;
@@ -43,9 +45,11 @@ public static class NetUtility {
     public static Action<NetMessage> C_START_GAME;
     public static Action<NetMessage> C_MAKE_MOVE;
     public static Action<NetMessage> C_REMATCH;
+    public static Action<NetMessage> C_PROMOTION;
     public static Action<NetMessage, NetworkConnection> S_KEEP_ALIVE;
     public static Action<NetMessage, NetworkConnection> S_WELCOME;
     public static Action<NetMessage, NetworkConnection> S_START_GAME;
     public static Action<NetMessage, NetworkConnection> S_MAKE_MOVE;
     public static Action<NetMessage, NetworkConnection> S_REMATCH;
+    public static Action<NetMessage, NetworkConnection> S_PROMOTION;
 }

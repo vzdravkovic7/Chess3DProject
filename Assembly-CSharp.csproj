@@ -60,6 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\ChessPieces\Bishop.cs" />
+    <Compile Include="Assets\Scripts\Net\NetMessage\NetPromotion.cs" />
     <Compile Include="Assets\Free Low Poly Chess Set\Example\Scripts\CameraRotate.cs" />
     <Compile Include="Assets\Scripts\Chessboard.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\ChessPiece.cs" />

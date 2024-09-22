@@ -100,5 +100,3 @@ MonoBehaviour:
   currentX: 0
   currentY: 0
   type: 0
-  desiredPosition: {x: 0, y: 0, z: 0}
-  desiredScale: {x: 0, y: 0, z: 0}

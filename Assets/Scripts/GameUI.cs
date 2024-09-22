@@ -20,6 +20,7 @@ public class GameUI : MonoBehaviour
     [SerializeField] private GameObject[] cameraAngles;
 
     public Action<bool> SetLocalGame;
+    public Action<ChessPieceType> PromotionSelected;
 
     public void Awake() {
         Instance = this;
@@ -73,6 +74,22 @@ public class GameUI : MonoBehaviour
     public void OnLeaveFromGameMenu() {
         ChangeCamera(CameraAngle.menu);
         menuAnimator.SetTrigger("StartMenu");
+    }
+
+    public void OnSelectQueen() {
+        PromotionSelected?.Invoke(ChessPieceType.Queen);
+    }
+
+    public void OnSelectRook() {
+        PromotionSelected?.Invoke(ChessPieceType.Rook);
+    }
+
+    public void OnSelectBishop() {
+        PromotionSelected?.Invoke(ChessPieceType.Bishop);
+    }
+
+    public void OnSelectKnight() {
+        PromotionSelected?.Invoke(ChessPieceType.Knight);
     }
 
     #region
