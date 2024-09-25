@@ -1,6 +1,6 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-
 public class King : ChessPiece {
     public override List<Vector2Int> GetAvailableMoves(ref ChessPiece[,] board, int tileCountX, int tileCountY) {
         List<Vector2Int> r = new List<Vector2Int>();
@@ -67,13 +67,43 @@ public class King : ChessPiece {
         return r;
     }
 
-    public override SpecialMove GetSpecialMoves(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves) {
+    public override SpecialMove GetSpecialMoves(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves, bool onReplay = false, int currentReplayMove = 0, bool goingForward = false, ChessPiece lastDeadPiece = null) {
 
         SpecialMove r = SpecialMove.None;
 
-        Vector2Int[] kingMove = moveList.Find(m => m[0].x == 4 && m[0].y == ((team == 0) ? 0 : 7));
-        Vector2Int[] leftRook = moveList.Find(m => m[0].x == 0 && m[0].y == ((team == 0) ? 0 : 7));
-        Vector2Int[] rightRook = moveList.Find(m => m[0].x == 7 && m[0].y == ((team == 0) ? 0 : 7));
+        Vector2Int[] kingMove = null;
+        Vector2Int[] leftRook = null;
+        Vector2Int[] rightRook = null;
+        if (!onReplay) {
+            kingMove = moveList.Find(m => m[0].x == 4 && m[0].y == ((team == 0) ? 0 : 7));
+            leftRook = moveList.Find(m => m[0].x == 0 && m[0].y == ((team == 0) ? 0 : 7));
+            rightRook = moveList.Find(m => m[0].x == 7 && m[0].y == ((team == 0) ? 0 : 7));
+        } else {
+            List<Vector2Int[]>  replayList = new List<Vector2Int[]>();
+
+            if (!goingForward) {
+                Vector2Int[] lastMove = moveList[currentReplayMove - 1];
+                if (Math.Abs(lastMove[0].x - lastMove[1].x) == 2 && board[lastMove[1].x, lastMove[1].y].type == ChessPieceType.King) {
+                    // If the king moved exactly 2 squares horizontally, it was a castling move
+                    r = SpecialMove.Castling;
+                    return r;
+                }
+            }
+
+            for (int i = 0; i < currentReplayMove; i++) {
+                Vector2Int[] move = moveList[i];
+                // Create a new array to avoid referencing the same array in memory
+                Vector2Int[] moveCopy = new Vector2Int[move.Length];
+                move.CopyTo(moveCopy, 0);
+
+                replayList.Add(moveCopy);
+            }
+
+
+            kingMove = replayList.Find(m => m[0].x == 4 && m[0].y == ((team == 0) ? 0 : 7));
+            leftRook = replayList.Find(m => m[0].x == 0 && m[0].y == ((team == 0) ? 0 : 7));
+            rightRook = replayList.Find(m => m[0].x == 7 && m[0].y == ((team == 0) ? 0 : 7));
+        }
 
         if(kingMove == null && currentX == 4) {
             // White team

@@ -26,9 +26,20 @@ public class Chessboard : MonoBehaviour
     [SerializeField] private GameObject victoryScreen;
     [SerializeField] private Transform rematchIndicator;
     [SerializeField] private Button rematchButton;
+    [SerializeField] private Button fastBackwardButton;
     [SerializeField] private TextMeshProUGUI warningText;
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private GameObject promotionPopup;
+    private float promotionPopupSize = 1f;
+    private bool promotionPopupActivate = false;
+    private bool isScalingUp = false;
+    [SerializeField] private GameObject matchUI;
+    [SerializeField] private GameObject replayUI;
+    [SerializeField] private TextMeshProUGUI moveText;
+    private bool isFastForwarding = false;
+    private bool isFastReversing = false;
+    private float fastTimeCounter = 0f;
+    private float fastMoveDelay = 0.2f; // Adjust speed of fast forward/backward
 
     [Header("Prefabs & Materials")]
     [SerializeField] private GameObject[] prefabs;
@@ -46,6 +57,9 @@ public class Chessboard : MonoBehaviour
     private float currentTime = 0.0f;
     private float prePromotionTime = 0.0f;
     private bool gameStarted = false;
+    private bool onReplay = false;
+    private int currentReplayMove = 0;
+    private int currentReplayChosenPieceIndex = -1;
     private bool onMenu = true;
     private GameObject[,] tiles;
     private Camera currentCamera;
@@ -53,11 +67,16 @@ public class Chessboard : MonoBehaviour
     private Vector3 bounds;
     private bool isWhiteTurn;
     private bool pausedForPromotion = false;
+    private bool goingForward = true;
     private ChessPiece currentlyPromotingPawn;
     private Vector2Int promotingPosition;
     private int previousCount;
     private SpecialMove specialMove;
     private List<Vector2Int[]> moveList = new List<Vector2Int[]>();
+    private List<ChessPieceType> chosenPieces = new List<ChessPieceType>();
+    private List<Vector2Int> chosenPiecesPromotionPositions = new List<Vector2Int>();
+    private List<int> promotionMoveIndexList = new List<int>();
+    private int winningTeam = 2;
 
     // Multi logic
     private int playerCount = -1;
@@ -66,6 +85,8 @@ public class Chessboard : MonoBehaviour
     private bool[] playerRematch = new bool[2];
 
     private void Start() {
+        fastBackwardButton.transform.localScale = new Vector3(-1, 1, 1);
+
         isWhiteTurn = true;
 
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
@@ -81,110 +102,195 @@ public class Chessboard : MonoBehaviour
             return;
         }
 
-        if (gameStarted) {
-            currentTime -= Time.deltaTime;
-            timerText.text = (isWhiteTurn ? "WHITE" : "BLACK") + " TURN TIME LEFT: " + ((int)(currentTime / 60)).ToString("D2") + ":" + ((int)(currentTime % 60)).ToString("D2");
+        if (!onReplay) {
+            if (gameStarted) {
+                currentTime -= Time.deltaTime;
+                timerText.text = (isWhiteTurn ? "WHITE" : "BLACK") + " TURN TIME LEFT: " + ((int)(currentTime / 60)).ToString("D2") + ":" + ((int)(currentTime % 60)).ToString("D2");
 
-            if (currentTime < 0) {
-                // Turn time ran out, end of the game
-                CheckMate((isWhiteTurn) ? 1 : 0);
-                pausedForPromotion = false;
-                if (localGame)
-                    currentTeam = 0;
-            }
+                if (currentTime < 0) {
+                    // Turn time ran out, end of the game
+                    CheckMate((isWhiteTurn) ? 1 : 0);
+                    pausedForPromotion = false;
+                    if (localGame)
+                        currentTeam = 0;
+                }
 
-            if (!pausedForPromotion) {
-                RaycastHit info;
-                Ray ray = currentCamera.ScreenPointToRay(Input.mousePosition);
-                if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Hover", "Highlight", "CaptureHighlight", "SpecialHighlight"))) {
-                    // Get the indexes of the tile I've hit
-                    Vector2Int hitPosition = LookupTileIndex(info.transform.gameObject);
+                if (promotionPopupActivate) {
+                    Vector3 targetScale;
+                    int targetSpeed;
 
-                    // If we're hovering a tile after not hovering a tile
-                    if (currentHover == -Vector2Int.one) {
-                        currentHover = hitPosition;
-                        tiles[hitPosition.x, hitPosition.y].layer = LayerMask.NameToLayer("Hover");
+                    // Determine if scaling up or down
+                    if (isScalingUp) {
+                        targetScale = new Vector3(1.4f, 1.4f, 1.4f) * promotionPopupSize;
+                        targetSpeed = 14;
+                    } else {
+                        targetScale = new Vector3(0.9f, 0.9f, 0.9f) * promotionPopupSize;
+                        targetSpeed = 8;
                     }
 
-                    // If we were already hovering a tile, change the previous one
-                    if (currentHover != hitPosition) {
-                        if (chessPieces[currentHover.x, currentHover.y] != null)
-                            tiles[currentHover.x, currentHover.y].layer = (ContainsValidMove(ref availableMoves, currentHover)) ? LayerMask.NameToLayer("CaptureHighlight") : LayerMask.NameToLayer("Tile");
-                        else
-                            tiles[currentHover.x, currentHover.y].layer = (ContainsValidMove(ref availableMoves, currentHover)) ? LayerMask.NameToLayer("Highlight") : LayerMask.NameToLayer("Tile");
+                    // Apply smooth scaling using Lerp
+                        promotionPopup.transform.localScale = Vector3.Lerp(promotionPopup.transform.localScale, targetScale, Time.deltaTime * targetSpeed);
 
-                        //if (specialMove == SpecialMove.Promotion)
-                        //    tiles[availableMoves[0].x, availableMoves[0].y].layer = LayerMask.NameToLayer("SpecialHighlight");
+                    // Check if the scaling has reached the target scale
+                    if (Vector3.Distance(promotionPopup.transform.localScale, targetScale) < 0.01f) {
+                        promotionPopup.transform.localScale = targetScale; // Snap to the target to avoid jitter
+                        if (isScalingUp) {
+                            isScalingUp = false; // Switch to scaling down
+                        } else {
+                            promotionPopupActivate = false; // End the scaling process
+                        }
+                    }
+                }
 
-                        if (previousCount != availableMoves.Count) {
-                            for (int i = previousCount; i < availableMoves.Count; i++)
-                                tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("SpecialHighlight");
+                if (!pausedForPromotion) {
+                    RaycastHit info;
+                    Ray ray = currentCamera.ScreenPointToRay(Input.mousePosition);
+                    if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Hover", "Highlight", "CaptureHighlight", "SpecialHighlight"))) {
+                        // Get the indexes of the tile I've hit
+                        Vector2Int hitPosition = LookupTileIndex(info.transform.gameObject);
+
+                        // If we're hovering a tile after not hovering a tile
+                        if (currentHover == -Vector2Int.one) {
+                            currentHover = hitPosition;
+                            tiles[hitPosition.x, hitPosition.y].layer = LayerMask.NameToLayer("Hover");
                         }
 
-                        currentHover = hitPosition;
-                        tiles[hitPosition.x, hitPosition.y].layer = LayerMask.NameToLayer("Hover");
-                    }
+                        // If we were already hovering a tile, change the previous one
+                        if (currentHover != hitPosition) {
+                            if (chessPieces[currentHover.x, currentHover.y] != null)
+                                tiles[currentHover.x, currentHover.y].layer = (ContainsValidMove(ref availableMoves, currentHover)) ? LayerMask.NameToLayer("CaptureHighlight") : LayerMask.NameToLayer("Tile");
+                            else
+                                tiles[currentHover.x, currentHover.y].layer = (ContainsValidMove(ref availableMoves, currentHover)) ? LayerMask.NameToLayer("Highlight") : LayerMask.NameToLayer("Tile");
 
-                    // If we press down on the mouse
-                    if (Input.GetMouseButtonDown(0)) {
-                        if (chessPieces[hitPosition.x, hitPosition.y] != null) {
-                            // Is it our turn?
-                            if ((chessPieces[hitPosition.x, hitPosition.y].team == 0 && isWhiteTurn && currentTeam == 0) || (chessPieces[hitPosition.x, hitPosition.y].team == 1 && !isWhiteTurn && currentTeam == 1)) {
-                                currentlyDragging = chessPieces[hitPosition.x, hitPosition.y];
+                            //if (specialMove == SpecialMove.Promotion)
+                            //    tiles[availableMoves[0].x, availableMoves[0].y].layer = LayerMask.NameToLayer("SpecialHighlight");
 
-                                // Get a list of where I can go, highlight tiles as well
-                                availableMoves = currentlyDragging.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
-                                previousCount = availableMoves.Count;
-                                // Get a list of special moves as well
-                                specialMove = currentlyDragging.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves);
+                            if (previousCount != availableMoves.Count) {
+                                for (int i = previousCount; i < availableMoves.Count; i++)
+                                    tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("SpecialHighlight");
+                            }
 
-                                PreventCheck();
-                                HighlightTiles();
+                            currentHover = hitPosition;
+                            tiles[hitPosition.x, hitPosition.y].layer = LayerMask.NameToLayer("Hover");
+                        }
+
+                        // If we press down on the mouse
+                        if (Input.GetMouseButtonDown(0)) {
+                            if (chessPieces[hitPosition.x, hitPosition.y] != null) {
+                                // Is it our turn?
+                                if ((chessPieces[hitPosition.x, hitPosition.y].team == 0 && isWhiteTurn && currentTeam == 0) || (chessPieces[hitPosition.x, hitPosition.y].team == 1 && !isWhiteTurn && currentTeam == 1)) {
+                                    currentlyDragging = chessPieces[hitPosition.x, hitPosition.y];
+
+                                    // Get a list of where I can go, highlight tiles as well
+                                    availableMoves = currentlyDragging.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
+                                    previousCount = availableMoves.Count;
+                                    // Get a list of special moves as well
+                                    specialMove = currentlyDragging.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves);
+
+                                    PreventCheck();
+                                    HighlightTiles();
+                                }
                             }
                         }
-                    }
 
-                    // if we are releasing the mouse button
-                    if (currentlyDragging != null && Input.GetMouseButtonUp(0)) {
-                        Vector2Int previousPosition = new Vector2Int(currentlyDragging.currentX, currentlyDragging.currentY);
+                        // if we are releasing the mouse button
+                        if (currentlyDragging != null && Input.GetMouseButtonUp(0)) {
+                            Vector2Int previousPosition = new Vector2Int(currentlyDragging.currentX, currentlyDragging.currentY);
 
-                        if (ContainsValidMove(ref availableMoves, new Vector2Int(hitPosition.x, hitPosition.y))) {
-                            MoveTo(previousPosition.x, previousPosition.y, hitPosition.x, hitPosition.y);
+                            if (ContainsValidMove(ref availableMoves, new Vector2Int(hitPosition.x, hitPosition.y))) {
+                                MoveTo(previousPosition.x, previousPosition.y, hitPosition.x, hitPosition.y);
 
-                            // Net implementation
-                            NetMakeMove mm = new NetMakeMove();
-                            mm.originalX = previousPosition.x;
-                            mm.originalY = previousPosition.y;
-                            mm.destinationX = hitPosition.x;
-                            mm.destinationY = hitPosition.y;
-                            mm.teamId = currentTeam;
-                            Client.Instance.SendToServer(mm);
-                        } else {
-                            currentlyDragging.SetPosition(GetTileCenter(previousPosition.x, previousPosition.y));
+                                // Net implementation
+                                NetMakeMove mm = new NetMakeMove();
+                                mm.originalX = previousPosition.x;
+                                mm.originalY = previousPosition.y;
+                                mm.destinationX = hitPosition.x;
+                                mm.destinationY = hitPosition.y;
+                                mm.teamId = currentTeam;
+                                Client.Instance.SendToServer(mm);
+                            } else {
+                                currentlyDragging.SetPosition(GetTileCenter(previousPosition.x, previousPosition.y));
+                                currentlyDragging = null;
+                                RemoveHighlightTiles();
+                            }
+                        }
+
+                    } else {
+                        if (currentHover != -Vector2Int.one) {
+                            if (chessPieces[currentHover.x, currentHover.y] != null)
+                                tiles[currentHover.x, currentHover.y].layer = (ContainsValidMove(ref availableMoves, currentHover)) ? LayerMask.NameToLayer("CaptureHighlight") : LayerMask.NameToLayer("Tile");
+                            else if (specialMove != SpecialMove.None) {
+                                if (tiles[currentHover.x, currentHover.y].layer != LayerMask.NameToLayer("Tile"))
+                                    tiles[currentHover.x, currentHover.y].layer = (ContainsValidMove(ref availableMoves, currentHover)) ? LayerMask.NameToLayer("SpecialHighlight") : LayerMask.NameToLayer("Tile");
+                            } else
+                                tiles[currentHover.x, currentHover.y].layer = (ContainsValidMove(ref availableMoves, currentHover)) ? LayerMask.NameToLayer("Highlight") : LayerMask.NameToLayer("Tile");
+
+
+                            currentHover = -Vector2Int.one;
+                        }
+
+                        if (currentlyDragging && Input.GetMouseButtonUp(0)) {
+                            currentlyDragging.SetPosition(GetTileCenter(currentlyDragging.currentX, currentlyDragging.currentY));
                             currentlyDragging = null;
                             RemoveHighlightTiles();
                         }
                     }
 
-                } else {
-                    if (currentHover != -Vector2Int.one) {
-                        tiles[currentHover.x, currentHover.y].layer = (ContainsValidMove(ref availableMoves, currentHover)) ? LayerMask.NameToLayer("Highlight") : LayerMask.NameToLayer("Tile");
-                        currentHover = -Vector2Int.one;
-                    }
-
-                    if (currentlyDragging && Input.GetMouseButtonUp(0)) {
-                        currentlyDragging.SetPosition(GetTileCenter(currentlyDragging.currentX, currentlyDragging.currentY));
-                        currentlyDragging = null;
-                        RemoveHighlightTiles();
+                    // If we're dragging a piece
+                    if (currentlyDragging) {
+                        Plane horizontalPlane = new Plane(Vector3.up, Vector3.up * yOffset);
+                        float distance = 0.0f;
+                        if (horizontalPlane.Raycast(ray, out distance)) {
+                            currentlyDragging.SetPosition(ray.GetPoint(distance) + Vector3.up * dragOffset);
+                        }
                     }
                 }
+            }
+        } else {
 
-                // If we're dragging a piece
-                if (currentlyDragging) {
-                    Plane horizontalPlane = new Plane(Vector3.up, Vector3.up * yOffset);
-                    float distance = 0.0f;
-                    if (horizontalPlane.Raycast(ray, out distance)) {
-                        currentlyDragging.SetPosition(ray.GetPoint(distance) + Vector3.up * dragOffset);
+            // Check for key press to pause fastforward/fastreverse
+            if (Input.GetKeyDown(KeyCode.P)) {
+                isFastForwarding = false;
+                isFastReversing = false;
+                moveText.text = moveText.text.Replace("(Press P to Pause)\n", "Paused\n").Trim();
+                replayUI.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = true;
+                replayUI.transform.GetChild(1).gameObject.GetComponent<Button>().interactable = true;
+                replayUI.transform.GetChild(3).gameObject.GetComponent<Button>().interactable = true;
+                replayUI.transform.GetChild(4).gameObject.GetComponent<Button>().interactable = true;
+            }
+            // Check if fast forward or reverse is active
+            if (isFastForwarding) {
+                replayUI.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = false;
+                replayUI.transform.GetChild(1).gameObject.GetComponent<Button>().interactable = false;
+                fastTimeCounter += Time.deltaTime;
+                if (fastTimeCounter >= fastMoveDelay) {
+                    if (currentReplayMove < moveList.Count) // Make sure we don't go past the last move
+                    {
+                        OnForwardButton(); // Forward method for one step
+                        fastTimeCounter = 0f; // Reset counter
+                    } else {
+                        isFastForwarding = false; // Stop when end of the list is reached
+                        replayUI.transform.GetChild(4).gameObject.GetComponent<Button>().interactable = false;
+                        replayUI.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = true;
+                        moveText.text = moveText.text.Replace("(Press P to Pause)\n", "").Trim();
+                        OnForwardButton(); // additional call for checkmate if not normally happened
+                    }
+                }
+            } else if (isFastReversing) {
+                replayUI.transform.GetChild(3).gameObject.GetComponent<Button>().interactable = false;
+                replayUI.transform.GetChild(4).gameObject.GetComponent<Button>().interactable = false;
+                fastTimeCounter += Time.deltaTime;
+                if (fastTimeCounter >= fastMoveDelay) {
+                    if (currentReplayMove > 0) // Make sure we don't go before the first move
+                    {
+                        OnBackwardButton(); // Backward for one step
+                        fastTimeCounter = 0f; // Reset counter
+                    } else {
+                        isFastReversing = false; // Stop when the start of the list is reached
+                        replayUI.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = false;
+                        replayUI.transform.GetChild(3).gameObject.GetComponent<Button>().interactable = true;
+                        replayUI.transform.GetChild(4).gameObject.GetComponent<Button>().interactable = true;
+                        moveText.text = moveText.text.Replace("(Press P to Pause)\n", "").Trim();
                     }
                 }
             }
@@ -319,16 +425,35 @@ public class Chessboard : MonoBehaviour
     // Checkmate
     private void CheckMate(int team) {
         gameStarted = false;
+        if(winningTeam != 3) // Invalid action prevention
+            winningTeam = team;
+        replayUI.gameObject.SetActive(false);
         DisplayVictory(team);
     }
 
     private void DisplayVictory(int winningTeam) {
         victoryScreen.SetActive(true);
-        victoryScreen.transform.GetChild(winningTeam).gameObject.SetActive(true);
+        if (winningTeam != 3)
+            victoryScreen.transform.GetChild(winningTeam).gameObject.SetActive(true);
+        if(!localGame)
+            victoryScreen.transform.GetChild(5).GetComponent<Button>().interactable = false;
+        else
+            victoryScreen.transform.GetChild(5).GetComponent<Button>().interactable = true;
     }
 
     public void OnRematchButton() {
         if (localGame) {
+            onReplay = false;
+            warningText.gameObject.SetActive(true);
+            timerText.gameObject.SetActive(true);
+            matchUI.gameObject.SetActive(true);
+            replayUI.gameObject.SetActive(false);
+            replayUI.transform.GetChild(0).gameObject.SetActive(false);
+            replayUI.transform.GetChild(1).gameObject.SetActive(false);
+            moveText.gameObject.SetActive(false);
+            replayUI.transform.GetChild(3).gameObject.SetActive(false);
+            replayUI.transform.GetChild(4).gameObject.SetActive(false);
+
             NetRematch wrm = new NetRematch();
             wrm.teamId = 0;
             wrm.wantRematch = 1;
@@ -338,6 +463,7 @@ public class Chessboard : MonoBehaviour
             brm.teamId = 1;
             brm.wantRematch = 1;
             Client.Instance.SendToServer(brm);
+
         } else {
             NetRematch rm = new NetRematch();
             rm.teamId = currentTeam;
@@ -351,9 +477,11 @@ public class Chessboard : MonoBehaviour
         currentTime = 0.0f;
         prePromotionTime = 0.0f;
         gameStarted = false;
+        goingForward = true;
+        if (!onReplay)
+            winningTeam = 2;
         pausedForPromotion = false;
-        warningText.gameObject.SetActive(false);
-        timerText.gameObject.SetActive(false);
+        matchUI.gameObject.SetActive(false);
 
         rematchButton.interactable = true;
 
@@ -369,7 +497,8 @@ public class Chessboard : MonoBehaviour
         // Fields reset
         currentlyDragging = null;
         availableMoves.Clear();
-        moveList.Clear();
+        if(!onReplay)
+            moveList.Clear();
         playerRematch[0] = playerRematch[1] = false;
         previousCount = 0;
         if (localGame)
@@ -394,12 +523,20 @@ public class Chessboard : MonoBehaviour
 
         deadWhites.Clear();
         deadBlacks.Clear();
+        if (!onReplay) {
+            promotionMoveIndexList.Clear();
+            chosenPiecesPromotionPositions.Clear();
+            chosenPieces.Clear();
+        }
 
         SpawnAllPieces();
         PositionAllPieces();
         isWhiteTurn = true;
-        if(!onMenu)
+        if (!onMenu) {
+            currentReplayChosenPieceIndex = -1;
+            currentReplayMove = 0;
             GameStart(false);
+        }
     }
 
     public void OnMenuButton() {
@@ -409,9 +546,17 @@ public class Chessboard : MonoBehaviour
         Client.Instance.SendToServer(rm);
 
         onMenu = true;
+        onReplay = false;
         GameReset();
-        warningText.gameObject.SetActive(false);
-        timerText.gameObject.SetActive(false);
+        matchUI.gameObject.SetActive(false);
+        warningText.gameObject.SetActive(true);
+        timerText.gameObject.SetActive(true);
+        replayUI.gameObject.SetActive(false);
+        replayUI.transform.GetChild(0).gameObject.SetActive(false);
+        replayUI.transform.GetChild(1).gameObject.SetActive(false);
+        moveText.gameObject.SetActive(false);
+        replayUI.transform.GetChild(3).gameObject.SetActive(false);
+        replayUI.transform.GetChild(4).gameObject.SetActive(false);
         GameUI.Instance.OnLeaveFromGameMenu();
 
         Invoke("ShutDownRelay", 1.0f);
@@ -421,17 +566,161 @@ public class Chessboard : MonoBehaviour
         currentTeam = -1;
     }
 
+    // Replay
+    public void OnReplayButton() {
+        warningText.gameObject.SetActive(false);
+        timerText.gameObject.SetActive(false);
+        matchUI.gameObject.SetActive(false);
+        replayUI.gameObject.SetActive(true);
+        replayUI.transform.GetChild(0).gameObject.SetActive(true);
+        replayUI.transform.GetChild(1).gameObject.SetActive(true);
+        replayUI.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = false;
+        replayUI.transform.GetChild(1).gameObject.GetComponent<Button>().interactable = false;
+        moveText.gameObject.SetActive(true);
+        moveText.text = "";
+        replayUI.transform.GetChild(3).gameObject.SetActive(true);
+        replayUI.transform.GetChild(4).gameObject.SetActive(true);
+        replayUI.transform.GetChild(3).gameObject.GetComponent<Button>().interactable = true;
+        replayUI.transform.GetChild(4).gameObject.GetComponent<Button>().interactable = true;
+        onReplay = true;
+        GameReset();
+    }
+
+    public void OnFastForwardButton() {
+        isFastForwarding = true;
+    }
+
+    public void OnForwardButton() {
+        if (currentReplayMove < moveList.Count) {
+            goingForward = true;
+            if (!isFastForwarding) {
+                replayUI.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = true;
+                replayUI.transform.GetChild(1).gameObject.GetComponent<Button>().interactable = true;
+                replayUI.transform.GetChild(4).gameObject.GetComponent<Button>().interactable = true;
+            }
+            if (isFastForwarding)
+                moveText.text = "(Press P to Pause)\n" + (chessPieces[moveList[currentReplayMove][0].x, moveList[currentReplayMove][0].y].ToString())[0].ToString();
+            else moveText.text = (chessPieces[moveList[currentReplayMove][0].x, moveList[currentReplayMove][0].y].ToString())[0].ToString();
+            ChessPiece cp = chessPieces[moveList[currentReplayMove][0].x, moveList[currentReplayMove][0].y];
+            availableMoves = cp.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
+            if (cp.type == ChessPieceType.Pawn || cp.type == ChessPieceType.King)
+                specialMove = cp.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves, onReplay, currentReplayMove, goingForward);
+            else
+                specialMove = cp.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves);
+
+            MoveTo(moveList[currentReplayMove][0].x, moveList[currentReplayMove][0].y, moveList[currentReplayMove][1].x, moveList[currentReplayMove][1].y);
+
+            moveText.text += moveList[currentReplayMove][0].x
+                + " " + moveList[currentReplayMove][0].y
+                + " -> " + (chessPieces[moveList[currentReplayMove][1].x, moveList[currentReplayMove][1].y].ToString())[0].ToString()
+                + moveList[currentReplayMove][1].x
+                + " " + moveList[currentReplayMove][1].y;
+
+            currentReplayMove++;
+        } else {
+            replayUI.transform.GetChild(3).gameObject.GetComponent<Button>().interactable = false;
+            replayUI.transform.GetChild(4).gameObject.GetComponent<Button>().interactable = false;
+            CheckMate(winningTeam);
+        }
+    }
+
+    public void OnFastBackwardButton() {
+        isFastReversing = true;
+    }
+
+    public void OnBackwardButton() {
+        if (currentReplayMove > 0) {
+            goingForward = false;
+            if (!isFastReversing) {
+                replayUI.transform.GetChild(3).gameObject.GetComponent<Button>().interactable = true;
+                replayUI.transform.GetChild(4).gameObject.GetComponent<Button>().interactable = true;
+                replayUI.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = true;
+            }
+            try {
+                if(isFastReversing)
+                    moveText.text = "(Press P to Pause)\n" + (chessPieces[moveList[currentReplayMove - 1][1].x, moveList[currentReplayMove - 1][1].y].ToString())[0].ToString();
+                else moveText.text = (chessPieces[moveList[currentReplayMove - 1][1].x, moveList[currentReplayMove - 1][1].y].ToString())[0].ToString();
+                ChessPiece cp = chessPieces[moveList[currentReplayMove - 1][1].x, moveList[currentReplayMove - 1][1].y];
+                availableMoves = cp.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
+                if (cp.type == ChessPieceType.Pawn || cp.type == ChessPieceType.King) {
+                    if (cp.type == ChessPieceType.King || (deadWhites.Count == 0 && deadBlacks.Count == 0))
+                        specialMove = cp.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves, onReplay, currentReplayMove, goingForward);
+                    else {
+                        ChessPiece lastDeadPiece;
+                        if ((deadBlacks.Count == 0 && !isWhiteTurn) || (deadWhites.Count == 0 && isWhiteTurn)) // No dead pieces = no previous capture
+                            lastDeadPiece = null;
+                        else
+                            lastDeadPiece = (cp.team == 0) ? deadBlacks[deadBlacks.Count - 1] : deadWhites[deadWhites.Count - 1];
+
+                        specialMove = cp.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves, onReplay, currentReplayMove, goingForward, lastDeadPiece);
+                    }
+
+                } else {
+                    specialMove = cp.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves);
+                }
+            } catch (NullReferenceException) {
+                moveText.text = "Spam or invalid move detected, closing replay...";
+                CheckMate(3);
+                return;
+            }
+
+            MoveTo(moveList[currentReplayMove - 1][1].x, moveList[currentReplayMove - 1][1].y, moveList[currentReplayMove - 1][0].x, moveList[currentReplayMove - 1][0].y);
+
+            moveText.text += moveList[currentReplayMove - 1][1].x
+                + " " + moveList[currentReplayMove - 1][1].y
+                + " -> " + (chessPieces[moveList[currentReplayMove - 1][0].x, moveList[currentReplayMove - 1][0].y].ToString())[0].ToString()
+                + moveList[currentReplayMove - 1][0].x
+                + " " + moveList[currentReplayMove - 1][0].y;
+
+            currentReplayMove--;
+        } else {
+            replayUI.transform.GetChild(0).gameObject.GetComponent<Button>().interactable = false;
+            replayUI.transform.GetChild(1).gameObject.GetComponent<Button>().interactable = false;
+        }
+    }
+
+
     // Special Moves
     private void ProcessSpecialMove() {
         if(specialMove == SpecialMove.EnPassant) {
-            Vector2Int[] newMove = moveList[moveList.Count - 1];
-            ChessPiece myPawn = chessPieces[newMove[1].x, newMove[1].y];
-            Vector2Int[] targetPawnPosition = moveList[moveList.Count - 2];
-            ChessPiece enemyPawn = chessPieces[targetPawnPosition[1].x, targetPawnPosition[1].y];
+            Vector2Int[] newMove = null;
+            ChessPiece myPawn = null;
+            Vector2Int[] targetPawnPosition = null;
+            ChessPiece enemyPawn = null;
+            if (!onReplay) {
+                newMove = moveList[moveList.Count - 1];
+                myPawn = chessPieces[newMove[1].x, newMove[1].y];
+                targetPawnPosition = moveList[moveList.Count - 2];
+                enemyPawn = chessPieces[targetPawnPosition[1].x, targetPawnPosition[1].y];
+            } else if (goingForward) {
+                newMove = moveList[currentReplayMove];
+                myPawn = chessPieces[newMove[1].x, newMove[1].y];
+                targetPawnPosition = moveList[currentReplayMove - 1];
+                enemyPawn = chessPieces[targetPawnPosition[1].x, targetPawnPosition[1].y];
+            } else {
+                targetPawnPosition = moveList[currentReplayMove - 1];
+                myPawn = chessPieces[targetPawnPosition[0].x, targetPawnPosition[0].y];
+                enemyPawn = (myPawn.team == 0) ? deadBlacks[deadBlacks.Count - 1] : deadWhites[deadWhites.Count - 1];
+
+                chessPieces[enemyPawn.currentX, enemyPawn.currentY] = enemyPawn;
+                PositionSinglePiece(enemyPawn.currentX, enemyPawn.currentY);
+
+                enemyPawn.SetScale(Vector3.one);
+                enemyPawn.capturedPosition = -Vector2Int.one;  // Reset the capture position
+
+                _ = (enemyPawn.team == 0) ? deadWhites.Remove(enemyPawn) : deadBlacks.Remove(enemyPawn); // Remove the piece from graveyard
+
+                return;
+            }
 
             if (myPawn.currentX == enemyPawn.currentX) {
                 if(myPawn.currentY == enemyPawn.currentY - 1 || myPawn.currentY == enemyPawn.currentY + 1) {
-                    if(enemyPawn.team == 0) {
+                    enemyPawn.capturedPosition = new Vector2Int(enemyPawn.currentX, enemyPawn.currentY);  // Store the capture position
+                    // Store the capture move
+                    if (onReplay)
+                        enemyPawn.capturedMove = currentReplayMove;
+
+                    if (enemyPawn.team == 0) {
                         deadWhites.Add(enemyPawn);
                         enemyPawn.SetScale(Vector3.one * deathSize);
                         enemyPawn.SetPosition(
@@ -454,60 +743,111 @@ public class Chessboard : MonoBehaviour
         }
 
         if(specialMove == SpecialMove.Promotion) {
-            Vector2Int[] lastMove = moveList[moveList.Count - 1];
-            ChessPiece targetPawn = chessPieces[lastMove[1].x, lastMove[1].y];
+            Vector2Int[] lastMove = null;
+            ChessPiece targetPawn = null;
+            if (!onReplay)
+                lastMove = moveList[moveList.Count - 1];
+            else if (!goingForward) {
+                currentReplayChosenPieceIndex--;
+                return;
+            } else lastMove = moveList[currentReplayMove];
 
-            if(targetPawn.type == ChessPieceType.Pawn) {
+            targetPawn = chessPieces[lastMove[1].x, lastMove[1].y];
+
+            if (targetPawn.type == ChessPieceType.Pawn) {
                 currentlyPromotingPawn = targetPawn;
                 promotingPosition = lastMove[1];
 
-                pausedForPromotion = true;
+                if (!onReplay) {
+                    pausedForPromotion = true;
 
-                isWhiteTurn = !isWhiteTurn;
-                currentTime = prePromotionTime;
-                if (localGame)
-                    currentTeam = (currentTeam == 0) ? 1 : 0;
+                    isWhiteTurn = !isWhiteTurn;
+                    currentTime = prePromotionTime;
+                    if (localGame)
+                        currentTeam = (currentTeam == 0) ? 1 : 0;
 
-                if (targetPawn.team == currentTeam) {
-                    promotionPopup.gameObject.SetActive(true);
-                    Vector3 worldPosition = targetPawn.transform.position;
-                    Vector3 screenPosition = Camera.main.WorldToScreenPoint(worldPosition);
-                    screenPosition.y += 100;
-                    promotionPopup.transform.position = screenPosition;
+                    if (targetPawn.team == currentTeam) {
+                        promotionPopup.gameObject.SetActive(true);
+                        promotionPopupActivate = true;
+                        isScalingUp = true;
+                        promotionPopup.transform.localScale = Vector3.zero;
+                        Vector3 worldPosition = targetPawn.transform.position;
+                        Vector3 screenPosition = Camera.main.WorldToScreenPoint(worldPosition);
+                        screenPosition.y += 100;
+                        promotionPopup.transform.position = screenPosition;
+                    }
+                } else {
+                    currentReplayChosenPieceIndex++;
+                    OnPromotionSelected(chosenPieces[currentReplayChosenPieceIndex]);
                 }
-
             }
         }
 
         if(specialMove == SpecialMove.Castling) {
-            Vector2Int[] lastMove = moveList[moveList.Count - 1];
+            Vector2Int[] lastMove = null;
+            if (!onReplay)
+                lastMove = moveList[moveList.Count - 1];
+            else if(goingForward)
+                lastMove = moveList[currentReplayMove];
+            else lastMove = moveList[currentReplayMove - 1];
 
-            // Left Rook
-            if (lastMove[1].x == 2) {
-                if(lastMove[1].y == 0) { // White side
-                    ChessPiece rook = chessPieces[0, 0];
-                    chessPieces[3, 0] = rook;
-                    PositionSinglePiece(3, 0);
-                    chessPieces[0, 0] = null;
-                } else if (lastMove[1].y == 7) { // Black side
-                    ChessPiece rook = chessPieces[0, 7];
-                    chessPieces[3, 7] = rook;
-                    PositionSinglePiece(3, 7);
-                    chessPieces[0, 7] = null;
+            if (!goingForward) {
+                // Left Rook
+                if (lastMove[1].x == 2) {
+                    if (lastMove[1].y == 0) { // White side
+                        ChessPiece rook = chessPieces[3, 0];
+                        chessPieces[0, 0] = rook;
+                        PositionSinglePiece(0, 0);
+                        chessPieces[3, 0] = null;
+                    } else if (lastMove[1].y == 7) { // Black side
+                        ChessPiece rook = chessPieces[3, 7];
+                        chessPieces[0, 7] = rook;
+                        PositionSinglePiece(0, 7);
+                        chessPieces[3, 7] = null;
+                    }
                 }
-            }
-            // Right Rook
-            else if (lastMove[1].x == 6) {
-                if (lastMove[1].y == 0) { // White side
-                    ChessPiece rook = chessPieces[7, 0];
-                    chessPieces[5, 0] = rook;
-                    PositionSinglePiece(5, 0);
-                    chessPieces[7, 0] = null;
-                } else if (lastMove[1].y == 7) { // Black side
-                    ChessPiece rook = chessPieces[7, 7];
-                    chessPieces[5, 7] = rook;
-                    PositionSinglePiece(5, 7);
-                    chessPieces[7, 7] = null;
+                // Right Rook
+                else if (lastMove[1].x == 6) {
+                    if (lastMove[1].y == 0) { // White side
+                        ChessPiece rook = chessPieces[5, 0];
+                        chessPieces[7, 0] = rook;
+                        PositionSinglePiece(7, 0);
+                        chessPieces[5, 0] = null;
+                    } else if (lastMove[1].y == 7) { // Black side
+                        ChessPiece rook = chessPieces[5, 7];
+                        chessPieces[7, 7] = rook;
+                        PositionSinglePiece(7, 7);
+                        chessPieces[5, 7] = null;
+                    }
+                }
+            } else {
+                // Left Rook
+                if (lastMove[1].x == 2) {
+                    if(lastMove[1].y == 0) { // White side
+                        ChessPiece rook = chessPieces[0, 0];
+                        chessPieces[3, 0] = rook;
+                        PositionSinglePiece(3, 0);
+                        chessPieces[0, 0] = null;
+                    } else if (lastMove[1].y == 7) { // Black side
+                        ChessPiece rook = chessPieces[0, 7];
+                        chessPieces[3, 7] = rook;
+                        PositionSinglePiece(3, 7);
+                        chessPieces[0, 7] = null;
+                    }
+                }
+                // Right Rook
+                else if (lastMove[1].x == 6) {
+                    if (lastMove[1].y == 0) { // White side
+                        ChessPiece rook = chessPieces[7, 0];
+                        chessPieces[5, 0] = rook;
+                        PositionSinglePiece(5, 0);
+                        chessPieces[7, 0] = null;
+                    } else if (lastMove[1].y == 7) { // Black side
+                        ChessPiece rook = chessPieces[7, 7];
+                        chessPieces[5, 7] = rook;
+                        PositionSinglePiece(5, 7);
+                        chessPieces[7, 7] = null;
+                    }
                 }
             }
         }
@@ -595,6 +935,8 @@ public class Chessboard : MonoBehaviour
 
     private int CheckForCheckmate() {
         Vector2Int[] lastMove = moveList[moveList.Count - 1];
+        if (onReplay)
+            lastMove = moveList[currentReplayMove];
         int targetTeam = (chessPieces[lastMove[1].x, lastMove[1].y].team == 0) ? 1 : 0;
 
         List<ChessPiece> attackingPieces = new List<ChessPiece>();
@@ -667,43 +1009,96 @@ public class Chessboard : MonoBehaviour
         ChessPiece cp = chessPieces[originalX, originalY];
         Vector2Int previousPosition = new Vector2Int(originalX, originalY);
 
-        // Is there another piece on the target position?
-        if (chessPieces[x, y] != null) {
-            ChessPiece ocp = chessPieces[x, y];
+        if (goingForward) {
+            // Is there another piece on the target position?
+            if (chessPieces[x, y] != null) {
+                ChessPiece ocp = chessPieces[x, y];
 
-            if(cp.team == ocp.team)
-                return;
+                if (cp.team == ocp.team)
+                    return;
 
-            // If its the enemy team
-            if(ocp.team == 0) {
-                if (ocp.type == ChessPieceType.King)
-                    CheckMate(1);
+                // If its the enemy team
+                ocp.capturedPosition = new Vector2Int(x, y);  // Store the capture position
+                // Store the capture move
+                if(onReplay)
+                    ocp.capturedMove = currentReplayMove;
 
-                deadWhites.Add(ocp);
-                ocp.SetScale(Vector3.one * deathSize);
-                ocp.SetPosition(
-                    new Vector3(8 * tileSize, yOffset, -1 * tileSize)
-                    - bounds
-                    + new Vector3(tileSize / 2, 0, tileSize / 2)
-                    + (Vector3.forward * deathSpacing) * deadWhites.Count);
-            } else {
-                if (ocp.type == ChessPieceType.King)
-                    CheckMate(0);
+                if (ocp.team == 0) {
+                    if (ocp.type == ChessPieceType.King)
+                        CheckMate(1);
 
-                deadBlacks.Add(ocp);
-                ocp.SetScale(Vector3.one * deathSize);
-                ocp.SetPosition(
-                    new Vector3(-1 * tileSize, yOffset, 8 * tileSize)
-                    - bounds
-                    + new Vector3(tileSize / 2, 0, tileSize / 2)
-                    + (Vector3.back * deathSpacing) * deadBlacks.Count);
+                    deadWhites.Add(ocp);
+                    ocp.SetScale(Vector3.one * deathSize);
+                    ocp.SetPosition(
+                        new Vector3(8 * tileSize, yOffset, -1 * tileSize)
+                        - bounds
+                        + new Vector3(tileSize / 2, 0, tileSize / 2)
+                        + (Vector3.forward * deathSpacing) * deadWhites.Count);
+                } else {
+                    if (ocp.type == ChessPieceType.King)
+                        CheckMate(0);
+
+                    deadBlacks.Add(ocp);
+                    ocp.SetScale(Vector3.one * deathSize);
+                    ocp.SetPosition(
+                        new Vector3(-1 * tileSize, yOffset, 8 * tileSize)
+                        - bounds
+                        + new Vector3(tileSize / 2, 0, tileSize / 2)
+                        + (Vector3.back * deathSpacing) * deadBlacks.Count);
+                }
             }
+            chessPieces[previousPosition.x, previousPosition.y] = null;
+        } else {
+            // Was there another piece on the target position?
+            Vector2Int previousCapturePosition;
+            if ((deadWhites.Count == 0 && isWhiteTurn) || (deadBlacks.Count == 0 && !isWhiteTurn)) // No dead pieces = no previous capture
+                previousCapturePosition = -Vector2Int.one;
+            else
+                previousCapturePosition = (!isWhiteTurn) ? deadBlacks[deadBlacks.Count - 1].capturedPosition : deadWhites[deadWhites.Count - 1].capturedPosition;
+
+            if (chessPieces[x, y] == null && previousCapturePosition.x == originalX && previousCapturePosition.y == originalY) { // It was a capture move, restore from graveyard
+                ChessPiece ocp = (!isWhiteTurn) ? deadBlacks[deadBlacks.Count - 1] : deadWhites[deadWhites.Count - 1];
+                if (ocp.capturedMove == currentReplayMove - 1) { // If its the right order
+                    chessPieces[originalX, originalY] = ocp;
+                    PositionSinglePiece(originalX, originalY);
+
+                    ocp.SetScale(Vector3.one);
+                    ocp.capturedPosition = -Vector2Int.one;  // Reset the capture position
+
+                    _ = (ocp.team == 0) ? deadWhites.Remove(ocp) : deadBlacks.Remove(ocp); // Remove the piece from graveyard
+                }
+            } else chessPieces[previousPosition.x, previousPosition.y] = null;
         }
 
         chessPieces[x, y] = cp;
-        chessPieces[previousPosition.x, previousPosition.y] = null;
-
         PositionSinglePiece(x, y);
+        if (onReplay) {
+            if (!goingForward && cp.promoted) {
+                int index = chosenPiecesPromotionPositions.IndexOf(previousPosition);
+                if (index != -1 && promotionMoveIndexList[currentReplayChosenPieceIndex] >= currentReplayMove) {
+                    currentlyPromotingPawn = cp;
+                    promotingPosition = new Vector2Int(x, y);
+                    OnPromotionSelected(ChessPieceType.Pawn);
+
+                    ChessPieceType cpType = cp.type;
+                    cp = chessPieces[x, y];
+
+                    availableMoves = cp.GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
+
+                    try {
+                        specialMove = cp.GetSpecialMoves(ref chessPieces, ref moveList, ref availableMoves);
+                    } catch (NullReferenceException) {
+                        specialMove = SpecialMove.None;
+                    }
+
+                    if (specialMove != SpecialMove.Promotion) {
+                        currentlyPromotingPawn = cp;
+                        promotingPosition = new Vector2Int(x, y);
+                        OnPromotionSelected(cpType);
+                    }
+                }
+            }
+        }
 
         if (!pausedForPromotion) {
             isWhiteTurn = !isWhiteTurn;
@@ -711,7 +1106,8 @@ public class Chessboard : MonoBehaviour
             currentTime = TURN_TIMER_MAX;
             if (localGame)
                 currentTeam = (currentTeam == 0) ? 1 : 0;
-            moveList.Add(new Vector2Int[] { previousPosition, new Vector2Int(x, y) });
+            if(!onReplay)
+                moveList.Add(new Vector2Int[] { previousPosition, new Vector2Int(x, y) });
         }
 
         ProcessSpecialMove();
@@ -720,15 +1116,17 @@ public class Chessboard : MonoBehaviour
             currentlyDragging = null;
         RemoveHighlightTiles();
 
-        switch (CheckForCheckmate()) {
-            default:
-                break;
-            case 1:
-                CheckMate(cp.team);
-                break;
-            case 2:
-                CheckMate(2);
-                break;
+        if (goingForward) {
+            switch (CheckForCheckmate()) {
+                default:
+                    break;
+                case 1:
+                    CheckMate(cp.team);
+                    break;
+                case 2:
+                    CheckMate(2);
+                    break;
+            }
         }
 
         return;
@@ -885,6 +1283,8 @@ public class Chessboard : MonoBehaviour
         playerCount = -1;
         currentTeam = -1;
         localGame = v;
+        if(localGame)
+            rematchButton.interactable = true;
     }
 
     private void OnPromotionSelected(ChessPieceType chosenPiece) {
@@ -900,28 +1300,41 @@ public class Chessboard : MonoBehaviour
             chessPieces[promotingPosition.x, promotingPosition.y] = newPiece;
             PositionSinglePiece(promotingPosition.x, promotingPosition.y);
 
+            if (goingForward) {
+                newPiece.promoted = true;
+                if (!onReplay) {
+                    chosenPieces.Add(chosenPiece);
+                    chosenPiecesPromotionPositions.Add(promotingPosition);
+                    promotionMoveIndexList.Add(moveList.Count);
+                }
+            }
+
+            promotionPopup.transform.localScale = Vector3.one * promotionPopupSize;
             promotionPopup.gameObject.SetActive(false);
+            promotionPopupActivate = false;
+            isScalingUp = false;
             pausedForPromotion = false;
 
-            isWhiteTurn = !isWhiteTurn;
-            prePromotionTime = currentTime;
-            currentTime = TURN_TIMER_MAX;
+            if (!onReplay) {
+                isWhiteTurn = !isWhiteTurn;
+                prePromotionTime = currentTime;
+                currentTime = TURN_TIMER_MAX;
+
+                if (localGame) {
+                    currentTeam = (currentTeam == 0) ? 1 : 0;
+                }
+            }
 
             NetPromotion pr = new NetPromotion();
             pr.teamId = currentTeam;
             pr.promotionIndex = (int)chosenPiece;
             Client.Instance.SendToServer(pr);
-
-            if (localGame) {
-                currentTeam = (currentTeam == 0) ? 1 : 0;
-            }
         }
     }
 
     private void GameStart(bool firstStart) {
         gameStarted = true;
-        warningText.gameObject.SetActive(true);
-        timerText.gameObject.SetActive(true);
+        matchUI.gameObject.SetActive(true);
         warningText.text = "";
         if (firstStart)
             currentTime = TURN_TIMER_MAX + 1.5f;

@@ -17,6 +17,9 @@ public class ChessPiece : MonoBehaviour
     public int currentX;
     public int currentY;
     public ChessPieceType type;
+    public Vector2Int capturedPosition = -Vector2Int.one;
+    public bool promoted = false;
+    public int capturedMove = -1;
 
     private Vector3 desiredPosition;
     private Vector3 desiredScale = Vector3.one;
@@ -41,7 +44,7 @@ public class ChessPiece : MonoBehaviour
         return r;
     }
 
-    public virtual SpecialMove GetSpecialMoves(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves) {
+    public virtual SpecialMove GetSpecialMoves(ref ChessPiece[,] board, ref List<Vector2Int[]> moveList, ref List<Vector2Int> availableMoves, bool onReplay = false, int currentReplayMove = 0, bool goingForward = false, ChessPiece lastDeadPiece = null) {
         return SpecialMove.None;
     }
 
