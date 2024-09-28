@@ -1,0 +1,41 @@
+{
+    "winningTeam": 0,
+    "startingTeam": 0,
+    "moveList": [
+        {
+            "start": {
+                "x": 2,
+                "y": 1
+            },
+            "end": {
+                "x": 2,
+                "y": 3
+            }
+        },
+        {
+            "start": {
+                "x": 6,
+                "y": 6
+            },
+            "end": {
+                "x": 6,
+                "y": 4
+            }
+        },
+        {
+            "start": {
+                "x": 7,
+                "y": 1
+            },
+            "end": {
+                "x": 7,
+                "y": 2
+            }
+        }
+    ],
+    "chosenPieces": [],
+    "chosenPiecesPromotionPositions": [],
+    "promotionMoveIndexList": [],
+    "saveDate": "2024-09-28 16:14:32",
+    "saveName": "black surrender"
+}

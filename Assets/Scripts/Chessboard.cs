@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using TMPro;
 using Unity.Networking.Transport;
@@ -13,8 +14,6 @@ public enum SpecialMove {
     Castling,
     Promotion
 }
-
-// TODO : saveReplay
 
 public class Chessboard : MonoBehaviour
 {
@@ -53,6 +52,7 @@ public class Chessboard : MonoBehaviour
     ChessPiece targetKing = null;
     [SerializeField] private Button saveMatchButton;
     [SerializeField] private GameObject savedMatchesUI;
+    [SerializeField] private TMP_InputField saveNameInputField;
 
 
     [Header("Prefabs & Materials")]
@@ -97,6 +97,7 @@ public class Chessboard : MonoBehaviour
     private int currentTeam = -1;
     private bool localGame = true;
     private bool[] playerRematch = new bool[2];
+    private int startingTeam = -1;
 
     private void Start() {
         fastBackwardButton.transform.localScale = new Vector3(-1, 1, 1);
@@ -170,7 +171,7 @@ public class Chessboard : MonoBehaviour
                 if (!pausedForPromotion) {
                     RaycastHit info;
                     Ray ray = currentCamera.ScreenPointToRay(Input.mousePosition);
-                    if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Hover", "Highlight", "CaptureHighlight", "SpecialHighlight"))) {
+                    if (Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Hover", "Highlight", "CaptureHighlight", "SpecialHighlight", "KingCheck"))) {
                         // Get the indexes of the tile I've hit
                         Vector2Int hitPosition = LookupTileIndex(info.transform.gameObject);
 
@@ -195,8 +196,11 @@ public class Chessboard : MonoBehaviour
                                     tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("SpecialHighlight");
                             }
 
+                            if(isCheck) tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("KingCheck");
+
                             currentHover = hitPosition;
                             tiles[hitPosition.x, hitPosition.y].layer = LayerMask.NameToLayer("Hover");
+
                         }
 
                         // If we press down on the mouse
@@ -252,6 +256,7 @@ public class Chessboard : MonoBehaviour
 
 
                             currentHover = -Vector2Int.one;
+                            if (isCheck) tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("KingCheck");
                         }
 
                         if (currentlyDragging && Input.GetMouseButtonUp(0)) {
@@ -442,6 +447,8 @@ public class Chessboard : MonoBehaviour
                     tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("SpecialHighlight");
             }
         }
+
+        if(isCheck) tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("KingCheck");
     }
 
     private void RemoveHighlightTiles() {
@@ -457,6 +464,7 @@ public class Chessboard : MonoBehaviour
         if(winningTeam != 3) // Invalid action prevention
             winningTeam = team;
         replayUI.gameObject.SetActive(false);
+        matchUI.transform.GetChild(0).gameObject.SetActive(false);
         DisplayVictory(team);
     }
 
@@ -510,8 +518,13 @@ public class Chessboard : MonoBehaviour
         goingForward = true;
         if (!onReplay) {
             winningTeam = 2;
+            if (localGame) {
+                startingTeam = 0;
+                GameUI.Instance.ChangeCamera(CameraAngle.whiteTeam);
+            }
             saveMatchButton.transform.GetChild(0).gameObject.GetComponent<TextMeshProUGUI>().text = "SAVE MATCH";
             saveMatchButton.interactable = true;
+            matchUI.transform.GetChild(0).gameObject.SetActive(true);
         }
         pausedForPromotion = false;
         matchUI.gameObject.SetActive(false);
@@ -612,6 +625,7 @@ public class Chessboard : MonoBehaviour
     // Replay
     public void OnSavedMatchesButton() {
         savedMatchesUI.gameObject.SetActive(true);
+        ReplayManager.Instance.LoadReplays();
     }
 
     public void OnSavedMatchesBackButton() {
@@ -652,6 +666,30 @@ public class Chessboard : MonoBehaviour
     public void OnSaveMatchButton() {
         saveMatchButton.transform.GetChild(0).gameObject.GetComponent<TextMeshProUGUI>().text = "SAVED";
         saveMatchButton.interactable = false;
+
+        List<MoveData> convertedMoveList = new List<MoveData>();
+        foreach (var move in moveList) {
+            MoveData moveData = new MoveData(move[0], move[1]);
+            convertedMoveList.Add(moveData);
+        }
+
+        ReplayData matchReplayData = new ReplayData {
+            winningTeam = winningTeam,
+            startingTeam = startingTeam,
+            moveList = convertedMoveList,
+            chosenPieces = new List<ChessPieceType>(chosenPieces),
+            chosenPiecesPromotionPositions = new List<Vector2Int>(chosenPiecesPromotionPositions),
+            promotionMoveIndexList = new List<int>(promotionMoveIndexList),
+            saveDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            saveName = saveNameInputField.text
+        };
+        ReplayManager.Instance.SaveReplay(matchReplayData);
+        saveNameInputField.text = "";
+    }
+
+    public void OnBackToSaveMatchesButton() {
+        OnMenuButton();
+        OnSavedMatchesButton();
     }
 
     public void OnFastForwardButton() {
@@ -1029,7 +1067,9 @@ public class Chessboard : MonoBehaviour
         List<ChessPiece> attackingPieces = new List<ChessPiece>();
         List<ChessPiece> defendingPieces = new List<ChessPiece>();
         if(targetKing != null) {
-            tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("Tile");
+            if(targetKing.currentX != lastMove[0].x && targetKing.currentY != lastMove[0].y)
+                tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("Tile");
+            else tiles[lastMove[0].x, lastMove[0].y].layer = LayerMask.NameToLayer("Tile");
             targetKing = null;
         }
 
@@ -1078,7 +1118,9 @@ public class Chessboard : MonoBehaviour
             return 1; // Checkmate exit
         } else {
             isCheck = false;
-            tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("Tile");
+            if (targetKing.currentX != lastMove[0].x && targetKing.currentY != lastMove[0].y)
+                tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("Tile");
+            else tiles[lastMove[0].x, lastMove[0].y].layer = LayerMask.NameToLayer("Tile");
             for (int i = 0; i < defendingPieces.Count; i++) {
                 List<Vector2Int> defendingMoves = defendingPieces[i].GetAvailableMoves(ref chessPieces, TILE_COUNT_X, TILE_COUNT_Y);
                 // Since we're sending ref defendingMoves, we will be deleting moves that are putting us in check
@@ -1258,9 +1300,8 @@ public class Chessboard : MonoBehaviour
 
         GameUI.Instance.SetLocalGame += OnSetLocalGame;
         GameUI.Instance.PromotionSelected += OnPromotionSelected;
+        ReplayManager.Instance.OnReplayLoaded += ReplayManager_OnReplayLoaded;
     }
-
-    
 
     private void UnRegisterEvents() {
         NetUtility.S_WELCOME -= OnWelcomeServer;
@@ -1278,6 +1319,7 @@ public class Chessboard : MonoBehaviour
 
         GameUI.Instance.SetLocalGame -= OnSetLocalGame;
         GameUI.Instance.PromotionSelected -= OnPromotionSelected;
+        ReplayManager.Instance.OnReplayLoaded -= ReplayManager_OnReplayLoaded;
     }
 
     // Server
@@ -1325,6 +1367,8 @@ public class Chessboard : MonoBehaviour
 
         // Assign a team
         currentTeam = nw.AssignedTeam;
+        if(startingTeam == -1)
+            startingTeam = nw.AssignedTeam;
 
         Debug.Log($"My assigned team is {nw.AssignedTeam}");
 
@@ -1335,6 +1379,10 @@ public class Chessboard : MonoBehaviour
     private void OnStartGameClient(NetMessage msg) {
         GameUI.Instance.ChangeCamera((currentTeam == 0) ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
         GameStart(true);
+        if (onReplay) {
+            OnReplayButton();
+            GameUI.Instance.ChangeCamera((startingTeam == 0) ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
+        }
     }
 
     private void OnMakeMoveClient(NetMessage msg) {
@@ -1456,10 +1504,39 @@ public class Chessboard : MonoBehaviour
         }
     }
 
+    private void ReplayManager_OnReplayLoaded(object sender, ReplayData e) {
+        savedMatchesUI.gameObject.SetActive(false);
+        GameUI.Instance.OnLocalGameButton();
+        onReplay = true;
+        GameUI.Instance.ChangeCamera((e.startingTeam == 0) ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
+        List<Vector2Int[]> loadedMoveList = new List<Vector2Int[]>();
+
+        foreach (MoveData moveData in e.moveList) {
+            Vector2Int[] move = new Vector2Int[2];
+            move[0] = moveData.start;
+            move[1] = moveData.end;
+            loadedMoveList.Add(move);
+        }
+
+        // Set the current replay data in the game
+        moveList = loadedMoveList;
+
+        chosenPieces = e.chosenPieces;
+        chosenPiecesPromotionPositions = e.chosenPiecesPromotionPositions;
+        promotionMoveIndexList = e.promotionMoveIndexList;
+
+        winningTeam = e.winningTeam;
+        startingTeam = e.startingTeam;
+
+        saveMatchButton.transform.GetChild(0).gameObject.GetComponent<TextMeshProUGUI>().text = "SAVED";
+        saveMatchButton.interactable = false;
+    }
+
     private void GameStart(bool firstStart) {
         gameStarted = true;
         matchUI.gameObject.SetActive(true);
         warningText.text = "";
+        saveNameInputField.text = "";
         if (firstStart)
             currentTime = TURN_TIMER_MAX + 1.5f;
         else

@@ -1,0 +1,51 @@
+{
+    "winningTeam": 1,
+    "startingTeam": 0,
+    "moveList": [
+        {
+            "start": {
+                "x": 5,
+                "y": 1
+            },
+            "end": {
+                "x": 5,
+                "y": 3
+            }
+        },
+        {
+            "start": {
+                "x": 4,
+                "y": 6
+            },
+            "end": {
+                "x": 4,
+                "y": 5
+            }
+        },
+        {
+            "start": {
+                "x": 6,
+                "y": 1
+            },
+            "end": {
+                "x": 6,
+                "y": 3
+            }
+        },
+        {
+            "start": {
+                "x": 3,
+                "y": 7
+            },
+            "end": {
+                "x": 7,
+                "y": 3
+            }
+        }
+    ],
+    "chosenPieces": [],
+    "chosenPiecesPromotionPositions": [],
+    "promotionMoveIndexList": [],
+    "saveDate": "2024-09-28 16:13:40",
+    "saveName": "black win"
+}

@@ -63,6 +63,7 @@
     <Compile Include="Assets\Scripts\Net\NetMessage\NetPromotion.cs" />
     <Compile Include="Assets\Free Low Poly Chess Set\Example\Scripts\CameraRotate.cs" />
     <Compile Include="Assets\Scripts\Chessboard.cs" />
+    <Compile Include="Assets\Scripts\ReplaySingleUI.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\ChessPiece.cs" />
     <Compile Include="Assets\Scripts\Net\NetMessage\NetMessage.cs" />
     <Compile Include="Assets\Scripts\Net\NetUtility.cs" />
@@ -77,6 +78,7 @@
     <Compile Include="Assets\Scripts\Net\NetMessage\NetKeepAlive.cs" />
     <Compile Include="Assets\Scripts\Utilities.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Rook.cs" />
+    <Compile Include="Assets\Scripts\ReplayManager.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Pawn.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Queen.cs" />
     <Compile Include="Assets\Scripts\Net\NetMessage\NetWelcome.cs" />

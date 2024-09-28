@@ -1,0 +1,61 @@
+{
+    "winningTeam": 0,
+    "startingTeam": 0,
+    "moveList": [
+        {
+            "start": {
+                "x": 4,
+                "y": 1
+            },
+            "end": {
+                "x": 4,
+                "y": 3
+            }
+        },
+        {
+            "start": {
+                "x": 5,
+                "y": 6
+            },
+            "end": {
+                "x": 5,
+                "y": 4
+            }
+        },
+        {
+            "start": {
+                "x": 0,
+                "y": 1
+            },
+            "end": {
+                "x": 0,
+                "y": 2
+            }
+        },
+        {
+            "start": {
+                "x": 6,
+                "y": 6
+            },
+            "end": {
+                "x": 6,
+                "y": 4
+            }
+        },
+        {
+            "start": {
+                "x": 3,
+                "y": 0
+            },
+            "end": {
+                "x": 7,
+                "y": 4
+            }
+        }
+    ],
+    "chosenPieces": [],
+    "chosenPiecesPromotionPositions": [],
+    "promotionMoveIndexList": [],
+    "saveDate": "2024-09-28 16:12:50",
+    "saveName": "white win"
+}
