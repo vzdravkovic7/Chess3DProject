@@ -33,6 +33,7 @@ public class Chessboard : MonoBehaviour
     [SerializeField] private TextMeshProUGUI timerText;
     private Color originalColor;
     private float flashSpeed = 5f;
+    private bool tickingStarted = false;
     [SerializeField] private GameObject promotionPopup;
     private float promotionPopupSize = 1f;
     private bool promotionPopupActivate = false;
@@ -58,6 +59,20 @@ public class Chessboard : MonoBehaviour
     [Header("Prefabs & Materials")]
     [SerializeField] private GameObject[] prefabs;
     [SerializeField] private Material[] teamMaterials;
+
+    // Events
+
+    public event EventHandler OnMoveTriggered;
+    public event EventHandler OnCaptureMoveTriggered;
+    public event EventHandler OnEnPassantTriggered;
+    public event EventHandler OnPromotionTriggered;
+    public event EventHandler OnCastlingTriggered;
+    public event EventHandler OnCheckTriggered;
+    public event EventHandler OnVictoryTriggered;
+    public event EventHandler OnDefeatTriggered;
+    public event EventHandler OnStalemateTriggered;
+    public event EventHandler OnSlideTriggered;
+    public event EventHandler OnTickingTriggered;
 
     // LOGIC
     private ChessPiece[,] chessPieces;
@@ -124,12 +139,23 @@ public class Chessboard : MonoBehaviour
                 timerText.text = (isWhiteTurn ? "WHITE" : "BLACK") + " TURN TIME LEFT: " + ((int)(currentTime / 60)).ToString("D2") + ":" + ((int)(currentTime % 60)).ToString("D2");
                 
                 if (currentTime < 10) {
+                    if (!tickingStarted && currentTime < 8) {
+                        OnTickingTriggered?.Invoke(this, EventArgs.Empty);
+
+                        tickingStarted = true;
+                    }
                     // Fade in/out effect based on time (uses Mathf.Sin for smooth oscillation)
                     float alpha = Mathf.Abs(Mathf.Sin(Time.time * flashSpeed));
                     timerText.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+
                 } else {
                     // Reset the color to original when there’s no need for fading
                     timerText.color = originalColor;
+
+                    if (tickingStarted) {
+                        SoundManager.Instance.audioSource.Stop();
+                        tickingStarted = false;
+                    }
                 }
 
                 if (currentTime < 0) {
@@ -469,6 +495,11 @@ public class Chessboard : MonoBehaviour
     }
 
     private void DisplayVictory(int winningTeam) {
+        if (!onReplay) {
+            if (winningTeam == 2) OnStalemateTriggered?.Invoke(this, EventArgs.Empty);
+            else if (startingTeam != winningTeam) OnDefeatTriggered?.Invoke(this, EventArgs.Empty);
+            else OnVictoryTriggered?.Invoke(this, EventArgs.Empty);
+        }
         victoryScreen.SetActive(true);
         if (winningTeam != 3)
             victoryScreen.transform.GetChild(winningTeam).gameObject.SetActive(true);
@@ -476,6 +507,7 @@ public class Chessboard : MonoBehaviour
     }
 
     public void OnRematchButton() {
+        SoundManager.Instance.audioSource.Stop();
         if (localGame) {
             onReplay = false;
             warningText.gameObject.SetActive(true);
@@ -586,6 +618,7 @@ public class Chessboard : MonoBehaviour
     }
 
     public void OnMenuButton() {
+        SoundManager.Instance.audioSource.Stop();
         NetRematch rm = new NetRematch();
         rm.teamId = currentTeam;
         rm.wantRematch = 0;
@@ -633,6 +666,7 @@ public class Chessboard : MonoBehaviour
     }
 
     public void OnReplayButton() {
+        SoundManager.Instance.audioSource.Stop();
         if (!localGame) {
             NetRematch rm = new NetRematch();
             rm.teamId = currentTeam;
@@ -790,7 +824,11 @@ public class Chessboard : MonoBehaviour
 
             if (isFastReversing)
                 moveText.text = "(Press P to Pause)\n" + moveNotation;
-            else moveText.text = moveNotation;
+            else {
+                SoundManager.Instance.audioSource.Stop();
+                OnSlideTriggered?.Invoke(this, EventArgs.Empty);
+                moveText.text = moveNotation;
+            }
 
             currentReplayMove--;
         } else {
@@ -1149,6 +1187,8 @@ public class Chessboard : MonoBehaviour
         ChessPiece cp = chessPieces[originalX, originalY];
         Vector2Int previousPosition = new Vector2Int(originalX, originalY);
 
+        if (isCheck) tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("Tile");
+
         if (goingForward) {
             // Is there another piece on the target position?
             if (chessPieces[x, y] != null) {
@@ -1262,6 +1302,20 @@ public class Chessboard : MonoBehaviour
         if (goingForward) {
             switch (CheckForCheckmate()) {
                 default:
+                    // Based on current values, play sound effect
+                    if (onReplay) {
+                        if (!isFastForwarding) {
+                            SoundManager.Instance.audioSource.Stop();
+                            OnSlideTriggered?.Invoke(this, EventArgs.Empty);
+                        }
+                    } else {
+                        SoundManager.Instance.audioSource.Stop();
+                        if (isCheck) OnCheckTriggered?.Invoke(this, EventArgs.Empty);
+                        else if (specialMove == SpecialMove.EnPassant) OnEnPassantTriggered?.Invoke(this, EventArgs.Empty);
+                        else if (specialMove == SpecialMove.Castling) OnCastlingTriggered?.Invoke(this, EventArgs.Empty);
+                        else if (isCapture) OnCaptureMoveTriggered?.Invoke(this, EventArgs.Empty);
+                        else if (specialMove == SpecialMove.None) OnMoveTriggered?.Invoke(this, EventArgs.Empty);
+                    }
                     break;
                 case 1:
                     CheckMate(cp.team);
@@ -1491,6 +1545,7 @@ public class Chessboard : MonoBehaviour
                 prePromotionTime = currentTime;
                 currentTime = TURN_TIMER_MAX;
                 CheckForCheckmate();
+                if(!isCheck) OnPromotionTriggered?.Invoke(this, EventArgs.Empty);
 
                 if (localGame) {
                     currentTeam = (currentTeam == 0) ? 1 : 0;
