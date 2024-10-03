@@ -1,0 +1,61 @@
+{
+    "winningTeam": 0,
+    "startingTeam": 1,
+    "moveList": [
+        {
+            "start": {
+                "x": 2,
+                "y": 1
+            },
+            "end": {
+                "x": 2,
+                "y": 3
+            }
+        },
+        {
+            "start": {
+                "x": 5,
+                "y": 6
+            },
+            "end": {
+                "x": 5,
+                "y": 4
+            }
+        },
+        {
+            "start": {
+                "x": 4,
+                "y": 1
+            },
+            "end": {
+                "x": 4,
+                "y": 3
+            }
+        },
+        {
+            "start": {
+                "x": 6,
+                "y": 6
+            },
+            "end": {
+                "x": 6,
+                "y": 4
+            }
+        },
+        {
+            "start": {
+                "x": 3,
+                "y": 0
+            },
+            "end": {
+                "x": 7,
+                "y": 4
+            }
+        }
+    ],
+    "chosenPieces": [],
+    "chosenPiecesPromotionPositions": [],
+    "promotionMoveIndexList": [],
+    "saveDate": "2024-10-03 12:50:14",
+    "saveName": "black perspective - test 4"
+}

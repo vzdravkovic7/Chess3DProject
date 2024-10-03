@@ -58,7 +58,12 @@ public class Chessboard : MonoBehaviour
 
     [Header("Prefabs & Materials")]
     [SerializeField] private GameObject[] prefabs;
-    [SerializeField] private Material[] teamMaterials;
+    [SerializeField] private Material[] pawnMaterials;
+    [SerializeField] private Material[] knightMaterials;
+    [SerializeField] private Material[] bishopMaterials;
+    [SerializeField] private Material[] rookMaterials;
+    [SerializeField] private Material[] queenMaterials;
+    [SerializeField] private Material[] kingMaterials;
 
     // Events
 
@@ -428,9 +433,28 @@ public class Chessboard : MonoBehaviour
 
         cp.type = type;
         cp.team = team;
-        cp.GetComponent<MeshRenderer>().material = teamMaterials[team];
+        cp.GetComponent<MeshRenderer>().material = GetPieceMaterial(type, team);
 
         return cp;
+    }
+
+    private Material GetPieceMaterial(ChessPieceType type, int team) {
+        switch (type) {
+            case ChessPieceType.Pawn:
+                return pawnMaterials[team];
+            case ChessPieceType.Knight:
+                return knightMaterials[team];
+            case ChessPieceType.Bishop:
+                return bishopMaterials[team];
+            case ChessPieceType.Rook:
+                return rookMaterials[team];
+            case ChessPieceType.Queen:
+                return queenMaterials[team];
+            case ChessPieceType.King:
+                return kingMaterials[team];
+            default:
+                return null;
+        }
     }
 
     // Positioning
@@ -644,6 +668,7 @@ public class Chessboard : MonoBehaviour
         // Reset some values
         playerCount = -1;
         currentTeam = -1;
+        startingTeam = -1;
     }
 
     public void OnSurrenderButton() {
@@ -1315,6 +1340,8 @@ public class Chessboard : MonoBehaviour
                         else if (specialMove == SpecialMove.Castling) OnCastlingTriggered?.Invoke(this, EventArgs.Empty);
                         else if (isCapture) OnCaptureMoveTriggered?.Invoke(this, EventArgs.Empty);
                         else if (specialMove == SpecialMove.None) OnMoveTriggered?.Invoke(this, EventArgs.Empty);
+
+                        if(localGame) GameUI.Instance.ChangeCamera(isWhiteTurn ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
                     }
                     break;
                 case 1:
