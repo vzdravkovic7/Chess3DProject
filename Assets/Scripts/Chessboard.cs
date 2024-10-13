@@ -39,6 +39,7 @@ public class Chessboard : MonoBehaviour
     private bool promotionPopupActivate = false;
     private bool isScalingUp = false;
     [SerializeField] private GameObject matchUI;
+    [SerializeField] private GameObject inGameOptionsUI;
     [SerializeField] private GameObject replayUI;
     [SerializeField] private TextMeshProUGUI moveText;
     private bool isFastForwarding = false;
@@ -54,6 +55,10 @@ public class Chessboard : MonoBehaviour
     [SerializeField] private Button saveMatchButton;
     [SerializeField] private GameObject savedMatchesUI;
     [SerializeField] private TMP_InputField saveNameInputField;
+    [SerializeField] private Sprite disableRotation;
+    [SerializeField] private Sprite enableRotation;
+    [SerializeField] private Sprite disableVolume;
+    [SerializeField] private Sprite enableVolume;
 
 
     [Header("Prefabs & Materials")]
@@ -111,6 +116,7 @@ public class Chessboard : MonoBehaviour
     private List<Vector2Int> chosenPiecesPromotionPositions = new List<Vector2Int>();
     private List<int> promotionMoveIndexList = new List<int>();
     private int winningTeam = 2;
+    private bool localRotateEnabled = true;
 
     // Multi logic
     private int playerCount = -1;
@@ -515,6 +521,8 @@ public class Chessboard : MonoBehaviour
             winningTeam = team;
         replayUI.gameObject.SetActive(false);
         matchUI.transform.GetChild(0).gameObject.SetActive(false);
+        inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(false);
+        inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(false);
         DisplayVictory(team);
     }
 
@@ -538,6 +546,9 @@ public class Chessboard : MonoBehaviour
             timerText.gameObject.SetActive(true);
             matchUI.transform.GetChild(0).gameObject.SetActive(true);
             matchUI.gameObject.SetActive(true);
+            inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(true);
+            inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(true);
+            inGameOptionsUI.gameObject.SetActive(true);
             replayUI.gameObject.SetActive(false);
             replayUI.transform.GetChild(0).gameObject.SetActive(false);
             replayUI.transform.GetChild(1).gameObject.SetActive(false);
@@ -581,9 +592,12 @@ public class Chessboard : MonoBehaviour
             saveMatchButton.transform.GetChild(0).gameObject.GetComponent<TextMeshProUGUI>().text = "SAVE MATCH";
             saveMatchButton.interactable = true;
             matchUI.transform.GetChild(0).gameObject.SetActive(true);
+            inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(true);
+            inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(true);
         }
         pausedForPromotion = false;
         matchUI.gameObject.SetActive(false);
+        inGameOptionsUI.gameObject.SetActive(false);
 
         rematchButton.interactable = true;
 
@@ -652,9 +666,12 @@ public class Chessboard : MonoBehaviour
         onReplay = false;
         GameReset();
         matchUI.gameObject.SetActive(false);
+        inGameOptionsUI.gameObject.SetActive(false);
         warningText.gameObject.SetActive(true);
         timerText.gameObject.SetActive(true);
         matchUI.transform.GetChild(0).gameObject.SetActive(true);
+        inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(true);
+        inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(true);
         replayUI.gameObject.SetActive(false);
         replayUI.transform.GetChild(0).gameObject.SetActive(false);
         replayUI.transform.GetChild(1).gameObject.SetActive(false);
@@ -669,6 +686,19 @@ public class Chessboard : MonoBehaviour
         playerCount = -1;
         currentTeam = -1;
         startingTeam = -1;
+    }
+
+    public void OnCameraRotationButton() {
+        localRotateEnabled = !localRotateEnabled;
+        if(localRotateEnabled)
+            inGameOptionsUI.transform.GetChild(1).GetComponent<Button>().image.sprite = enableRotation;
+        else inGameOptionsUI.transform.GetChild(1).GetComponent<Button>().image.sprite = disableRotation;
+    }
+
+    public void OnVolumeButton() {
+        if (SoundManager.Instance.ChangeVolumeEnabled())
+            inGameOptionsUI.transform.GetChild(0).GetComponent<Button>().image.sprite = enableVolume;
+        else inGameOptionsUI.transform.GetChild(0).GetComponent<Button>().image.sprite = disableVolume;
     }
 
     public void OnSurrenderButton() {
@@ -707,6 +737,9 @@ public class Chessboard : MonoBehaviour
         timerText.gameObject.SetActive(false);
         matchUI.transform.GetChild(0).gameObject.SetActive(false);
         matchUI.gameObject.SetActive(false);
+        inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(false);
+        inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(false);
+        inGameOptionsUI.gameObject.SetActive(false);
         replayUI.gameObject.SetActive(true);
         replayUI.transform.GetChild(0).gameObject.SetActive(true);
         replayUI.transform.GetChild(1).gameObject.SetActive(true);
@@ -1136,6 +1169,8 @@ public class Chessboard : MonoBehaviour
             targetKing = null;
         }
 
+        if (IsInsufficientMaterial()) return 2;
+
         for (int x = 0; x < TILE_COUNT_X; x++)
             for (int y = 0; y < TILE_COUNT_Y; y++)
                 if (chessPieces[x, y] != null) {
@@ -1198,6 +1233,38 @@ public class Chessboard : MonoBehaviour
             warningText.text = "STALEMATE!";
             return 2; // Stalemate exit
         }
+    }
+
+    private bool IsInsufficientMaterial() {
+        int whiteBishops = 0, whiteKnights = 0, blackBishops = 0, blackKnights = 0;
+        bool whiteOtherPieces = false, blackOtherPieces = false;
+
+        for (int x = 0; x < TILE_COUNT_X; x++) {
+            for (int y = 0; y < TILE_COUNT_Y; y++) {
+                if (chessPieces[x, y] != null) {
+                    ChessPiece piece = chessPieces[x, y];
+                    if (piece.type == ChessPieceType.Knight) {
+                        if (piece.team == 0) whiteKnights++;
+                        else blackKnights++;
+                    } else if (piece.type == ChessPieceType.Bishop) {
+                        if (piece.team == 0) whiteBishops++;
+                        else blackBishops++;
+                    } else if (piece.type != ChessPieceType.King) {
+                        if (piece.team == 0) whiteOtherPieces = true;
+                        else blackOtherPieces = true;
+                    }
+                }
+            }
+        }
+
+        // Check insufficient material conditions
+        if ((!whiteOtherPieces && !blackOtherPieces) && (
+            (whiteKnights == 0 && blackKnights == 0 && whiteBishops <= 1 && blackBishops <= 1) ||
+            (whiteKnights <= 1 && blackKnights <= 1 && whiteBishops == 0 && blackBishops == 0))) {
+            return true;
+        }
+
+        return false;
     }
 
     // Operations
@@ -1341,7 +1408,7 @@ public class Chessboard : MonoBehaviour
                         else if (isCapture) OnCaptureMoveTriggered?.Invoke(this, EventArgs.Empty);
                         else if (specialMove == SpecialMove.None) OnMoveTriggered?.Invoke(this, EventArgs.Empty);
 
-                        if(localGame) GameUI.Instance.ChangeCamera(isWhiteTurn ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
+                        if(localGame && localRotateEnabled) GameUI.Instance.ChangeCamera(isWhiteTurn ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
                     }
                     break;
                 case 1:
@@ -1575,6 +1642,7 @@ public class Chessboard : MonoBehaviour
                 if(!isCheck) OnPromotionTriggered?.Invoke(this, EventArgs.Empty);
 
                 if (localGame) {
+                    if(localRotateEnabled) GameUI.Instance.ChangeCamera(isWhiteTurn ? CameraAngle.whiteTeam : CameraAngle.blackTeam);
                     currentTeam = (currentTeam == 0) ? 1 : 0;
                 }
             }
@@ -1617,6 +1685,7 @@ public class Chessboard : MonoBehaviour
     private void GameStart(bool firstStart) {
         gameStarted = true;
         matchUI.gameObject.SetActive(true);
+        if (localGame) inGameOptionsUI.gameObject.SetActive(true);
         warningText.text = "";
         saveNameInputField.text = "";
         if (firstStart)

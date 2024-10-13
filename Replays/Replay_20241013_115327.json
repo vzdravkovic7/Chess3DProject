@@ -1,0 +1,21 @@
+{
+    "winningTeam": 0,
+    "startingTeam": 0,
+    "moveList": [
+        {
+            "start": {
+                "x": 2,
+                "y": 1
+            },
+            "end": {
+                "x": 2,
+                "y": 2
+            }
+        }
+    ],
+    "chosenPieces": [],
+    "chosenPiecesPromotionPositions": [],
+    "promotionMoveIndexList": [],
+    "saveDate": "2024-10-13 11:53:27",
+    "saveName": "qegwtnturhwhjrdmjyhternsteghtestegrtshtegte"
+}

@@ -15,7 +15,17 @@ public class ReplaySingleUI : MonoBehaviour {
             replayInfoText.text += " - Winning Team: None";
         else
             replayInfoText.text += " - Winning Team: " + (replayData.winningTeam == 0 ? "White" : "Black");
-        if (replayData.saveName != "") replayInfoText.text += " Name: " + replayData.saveName;
+
+        if (!string.IsNullOrEmpty(replayData.saveName)) {
+            string displayName = replayData.saveName;
+
+            // Check if the save name is longer than 10 characters
+            if (displayName.Length > 10) {
+                displayName = displayName.Substring(0, 10) + "...";
+            }
+
+            replayInfoText.text += " Name: " + displayName;
+        }
     }
 
     public void OnLoadReplay() {
