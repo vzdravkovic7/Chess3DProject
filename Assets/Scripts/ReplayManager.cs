@@ -2,7 +2,7 @@ using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using System.Linq;
+using TMPro;
 
 [System.Serializable]
 public class MoveData {
@@ -32,6 +32,7 @@ public class ReplayManager : MonoBehaviour {
 
     [SerializeField] private GameObject replayPrefab; // Prefab to display replay info in the UI
     [SerializeField] private Transform savedMatchesUI; // Parent transform for the replay prefabs
+    [SerializeField] private TMP_InputField saveNameInputField;
 
     // Pagination
     private int currentPage = 0;
@@ -70,12 +71,31 @@ public class ReplayManager : MonoBehaviour {
 
         File.WriteAllText(filePath, json);
 
+        SetSaveNameText("");
+
         Debug.Log("Replay saved at: " + filePath);
     }
 
     public void OnRefreshButton() {
         ClearInstantiatedReplays();
         LoadReplays();
+    }
+
+    public void EnableSavedMatchesUI() {
+        savedMatchesUI.gameObject.SetActive(true);
+        LoadReplays();
+    }
+
+    public void DisableSavedMatchesUI() {
+        savedMatchesUI.gameObject.SetActive(false);
+    }
+
+    public string GetSaveNameText() {
+        return saveNameInputField.text;
+    }
+
+    public void SetSaveNameText(string text) {
+        saveNameInputField.text = text;
     }
 
     public void LoadReplays() {

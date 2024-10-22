@@ -86,6 +86,8 @@
     <Compile Include="Assets\Scripts\Net\NetMessage\NetRematch.cs" />
     <Compile Include="Assets\Brick Project Studio\_BPS Basic Assets\Common\Scripts and Animations\Windows\opencloseWindow1.cs" />
     <Compile Include="Assets\Scripts\Net\NetMessage\NetSurrender.cs" />
+    <Compile Include="Assets\Scripts\ReplayGameManager.cs" />
+    <Compile Include="Assets\Scripts\GameUIManager.cs" />
     <Compile Include="Assets\Scripts\ChessPieces\Knight.cs" />
     <Compile Include="Assets\Brick Project Studio\Apartment Kit\Common\Scripts &amp; Animation\TableFlip\TableFlipR.cs" />
     <Compile Include="Assets\Brick Project Studio\Apartment Kit\Common\Scripts &amp; Animation\Windows\opencloseWindowApt.cs" />

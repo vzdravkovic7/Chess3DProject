@@ -4,6 +4,13 @@ public class Utilities : MonoBehaviour
 {
     public static Utilities Instance { get; private set; }
 
+    [SerializeField] private Material[] pawnMaterials;
+    [SerializeField] private Material[] knightMaterials;
+    [SerializeField] private Material[] bishopMaterials;
+    [SerializeField] private Material[] rookMaterials;
+    [SerializeField] private Material[] queenMaterials;
+    [SerializeField] private Material[] kingMaterials;
+
     private void Awake() {
         Instance = this;
     }
@@ -73,7 +80,22 @@ public class Utilities : MonoBehaviour
         return "";
     }
 
-    public void OnSaveMatch() {
-
+    public Material GetPieceMaterial(ChessPieceType type, int team) {
+        switch (type) {
+            case ChessPieceType.Pawn:
+                return pawnMaterials[team];
+            case ChessPieceType.Knight:
+                return knightMaterials[team];
+            case ChessPieceType.Bishop:
+                return bishopMaterials[team];
+            case ChessPieceType.Rook:
+                return rookMaterials[team];
+            case ChessPieceType.Queen:
+                return queenMaterials[team];
+            case ChessPieceType.King:
+                return kingMaterials[team];
+            default:
+                return null;
+        }
     }
 }

@@ -525,6 +525,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 135839398}
   m_CullTransparentMesh: 1
+--- !u!1 &156975605
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 156975607}
+  - component: {fileID: 156975606}
+  m_Layer: 0
+  m_Name: ReplayGameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &156975606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 156975605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c98cf724286d60439856b716ed0584a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &156975607
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 156975605}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &170806945
 GameObject:
   m_ObjectHideFlags: 0
@@ -556,8 +600,8 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 374918589}
-  - {fileID: 1958433335}
   - {fileID: 1600292030}
+  - {fileID: 1958433335}
   m_Father: {fileID: 609686636}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
@@ -4543,6 +4587,64 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 871762733}
   m_CullTransparentMesh: 1
+--- !u!1 &950409604
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 950409606}
+  - component: {fileID: 950409605}
+  m_Layer: 0
+  m_Name: GameUIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &950409605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950409604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c8347731e9e805488ed235a9b01bd69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fastBackwardButton: {fileID: 776156337}
+  matchUI: {fileID: 170806945}
+  warningText: {fileID: 1600292031}
+  timerText: {fileID: 1958433336}
+  promotionPopup: {fileID: 1894233773}
+  inGameOptionsUI: {fileID: 1981374282}
+  disableRotation: {fileID: 21300000, guid: b2db88b78bb39474397fbefaf7a4c066, type: 3}
+  enableRotation: {fileID: 21300000, guid: 6af3a397cb919b545a1f9c1ad9e6720c, type: 3}
+  disableVolume: {fileID: 21300000, guid: 023ed66bc89b8984ba2ad6ab08603739, type: 3}
+  enableVolume: {fileID: 21300000, guid: 9916e9027fd000a4588f74d3dcc83cc3, type: 3}
+  victoryScreen: {fileID: 2083342601}
+  rematchIndicator: {fileID: 181369608}
+  rematchButton: {fileID: 2060290267}
+  saveMatchButton: {fileID: 249465110}
+--- !u!4 &950409606
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950409604}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &961041726
 GameObject:
   m_ObjectHideFlags: 0
@@ -5909,6 +6011,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3dfb74a5f4f823d4a8cbe4b01f78e535, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  pawnMaterials:
+  - {fileID: 2100000, guid: b5a19b2be2f034c4a892e205b62b52c8, type: 2}
+  - {fileID: 2100000, guid: 039463fa509ddec4f8f62464f3decc3e, type: 2}
+  knightMaterials:
+  - {fileID: 2100000, guid: 0d997373e4b0f7349a0bcfd9f75af5c4, type: 2}
+  - {fileID: 2100000, guid: bae910897e7359a4c8e219248d19fc3c, type: 2}
+  bishopMaterials:
+  - {fileID: 2100000, guid: 00912c1e55787984d8a57cef15d87a8b, type: 2}
+  - {fileID: 2100000, guid: 519bb7ad9c0b01145b66756f3c261e30, type: 2}
+  rookMaterials:
+  - {fileID: 2100000, guid: 3e8d44cfbd3c32a48b671135be64d6ac, type: 2}
+  - {fileID: 2100000, guid: c5ac722ef5a533941a87f79b7d4a197a, type: 2}
+  queenMaterials:
+  - {fileID: 2100000, guid: 1ed4f381fcff50d47acee09c5d1fdef2, type: 2}
+  - {fileID: 2100000, guid: 7d884c4fe6f7eec41a8c4c06eb3784e2, type: 2}
+  kingMaterials:
+  - {fileID: 2100000, guid: adefce1589f7e584ebd7c6d597a46ee9, type: 2}
+  - {fileID: 2100000, guid: 5a3ab2601b4968341a959d89a206c835, type: 2}
 --- !u!4 &1274663077
 Transform:
   m_ObjectHideFlags: 0
@@ -6297,8 +6417,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1686878251}
-        m_TargetAssemblyTypeName: Chessboard, Assembly-CSharp
+      - m_Target: {fileID: 609686637}
+        m_TargetAssemblyTypeName: GameUI, Assembly-CSharp
         m_MethodName: OnSavedMatchesButton
         m_Mode: 1
         m_Arguments:
@@ -6471,8 +6591,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1686878251}
-        m_TargetAssemblyTypeName: Chessboard, Assembly-CSharp
+      - m_Target: {fileID: 609686637}
+        m_TargetAssemblyTypeName: GameUI, Assembly-CSharp
         m_MethodName: OnSavedMatchesBackButton
         m_Mode: 1
         m_Arguments:
@@ -7309,7 +7429,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 1613.3334, y: -125}
-  m_SizeDelta: {x: 350, y: 150}
+  m_SizeDelta: {x: 550, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1600292031
 MonoBehaviour:
@@ -7358,8 +7478,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 60
-  m_fontSizeBase: 60
+  m_fontSize: 90
+  m_fontSizeBase: 90
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -7374,7 +7494,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_enableWordWrapping: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -7515,6 +7635,7 @@ MonoBehaviour:
   replayPrefab: {fileID: 8957982390522912050, guid: 769488cb8a821e44c9e73c7ebdf78553,
     type: 3}
   savedMatchesUI: {fileID: 1262417194}
+  saveNameInputField: {fileID: 679358115}
 --- !u!4 &1627585473
 Transform:
   m_ObjectHideFlags: 0
@@ -7642,8 +7763,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1686878251}
-        m_TargetAssemblyTypeName: Chessboard, Assembly-CSharp
+      - m_Target: {fileID: 609686637}
+        m_TargetAssemblyTypeName: GameUI, Assembly-CSharp
         m_MethodName: OnCameraRotationButton
         m_Mode: 1
         m_Arguments:
@@ -7687,24 +7808,8 @@ MonoBehaviour:
   deathSize: 0.45
   deathSpacing: 0.5
   dragOffset: 1
-  victoryScreen: {fileID: 2083342601}
-  rematchIndicator: {fileID: 181369608}
-  rematchButton: {fileID: 2060290267}
-  fastBackwardButton: {fileID: 776156337}
-  warningText: {fileID: 1958433336}
-  timerText: {fileID: 1600292031}
-  promotionPopup: {fileID: 1894233773}
-  matchUI: {fileID: 170806945}
-  inGameOptionsUI: {fileID: 1981374282}
   replayUI: {fileID: 696430679}
   moveText: {fileID: 688761910}
-  saveMatchButton: {fileID: 249465110}
-  savedMatchesUI: {fileID: 1262417190}
-  saveNameInputField: {fileID: 679358115}
-  disableRotation: {fileID: 21300000, guid: b2db88b78bb39474397fbefaf7a4c066, type: 3}
-  enableRotation: {fileID: 21300000, guid: 6af3a397cb919b545a1f9c1ad9e6720c, type: 3}
-  disableVolume: {fileID: 21300000, guid: 023ed66bc89b8984ba2ad6ab08603739, type: 3}
-  enableVolume: {fileID: 21300000, guid: 9916e9027fd000a4588f74d3dcc83cc3, type: 3}
   prefabs:
   - {fileID: 8385778544984517574, guid: 5e2f425a4335cd8428cf4373078d4924, type: 3}
   - {fileID: 4172319373074576376, guid: 2337f1323b25c834183fb5bce08cdc4a, type: 3}
@@ -7712,24 +7817,6 @@ MonoBehaviour:
   - {fileID: 9062362832498608937, guid: deb57418d02632e41b906b92b9fdb9cd, type: 3}
   - {fileID: 6278865568535691943, guid: 3d1170e428b4b6c49acc7b72ec1fd83f, type: 3}
   - {fileID: 3311667488009234568, guid: 9406d74a1e485ff4c8dad0f0dea9fb79, type: 3}
-  pawnMaterials:
-  - {fileID: 2100000, guid: b5a19b2be2f034c4a892e205b62b52c8, type: 2}
-  - {fileID: 2100000, guid: 039463fa509ddec4f8f62464f3decc3e, type: 2}
-  knightMaterials:
-  - {fileID: 2100000, guid: 0d997373e4b0f7349a0bcfd9f75af5c4, type: 2}
-  - {fileID: 2100000, guid: bae910897e7359a4c8e219248d19fc3c, type: 2}
-  bishopMaterials:
-  - {fileID: 2100000, guid: 00912c1e55787984d8a57cef15d87a8b, type: 2}
-  - {fileID: 2100000, guid: 519bb7ad9c0b01145b66756f3c261e30, type: 2}
-  rookMaterials:
-  - {fileID: 2100000, guid: 3e8d44cfbd3c32a48b671135be64d6ac, type: 2}
-  - {fileID: 2100000, guid: c5ac722ef5a533941a87f79b7d4a197a, type: 2}
-  queenMaterials:
-  - {fileID: 2100000, guid: 1ed4f381fcff50d47acee09c5d1fdef2, type: 2}
-  - {fileID: 2100000, guid: 7d884c4fe6f7eec41a8c4c06eb3784e2, type: 2}
-  kingMaterials:
-  - {fileID: 2100000, guid: adefce1589f7e584ebd7c6d597a46ee9, type: 2}
-  - {fileID: 2100000, guid: 5a3ab2601b4968341a959d89a206c835, type: 2}
 --- !u!1 &1700811103
 GameObject:
   m_ObjectHideFlags: 0
@@ -9902,7 +9989,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 910, y: -125}
-  m_SizeDelta: {x: 550, y: 150}
+  m_SizeDelta: {x: 350, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1958433336
 MonoBehaviour:
@@ -9951,8 +10038,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 90
-  m_fontSizeBase: 90
+  m_fontSize: 60
+  m_fontSizeBase: 60
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -9967,7 +10054,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 0
+  m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -10678,8 +10765,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1686878251}
-        m_TargetAssemblyTypeName: Chessboard, Assembly-CSharp
+      - m_Target: {fileID: 609686637}
+        m_TargetAssemblyTypeName: GameUI, Assembly-CSharp
         m_MethodName: OnVolumeButton
         m_Mode: 1
         m_Arguments:
@@ -10989,4 +11076,6 @@ SceneRoots:
   - {fileID: 1274663077}
   - {fileID: 1627585473}
   - {fileID: 1095088248}
+  - {fileID: 156975607}
+  - {fileID: 950409606}
   - {fileID: 1794344802}

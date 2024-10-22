@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System;
 
 public class SoundManager : MonoBehaviour {
-    public AudioSource audioSource;
-    public Chessboard chessboard;
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private Chessboard chessboard;
 
     public static SoundManager Instance { get; private set; }
 
@@ -35,11 +35,8 @@ public class SoundManager : MonoBehaviour {
         chessboard.OnPromotionTriggered += Chessboard_OnPromotionTriggered;
         chessboard.OnCastlingTriggered += Chessboard_OnCastlingTriggered;
         chessboard.OnCheckTriggered += Chessboard_OnCheckTriggered;
-        chessboard.OnVictoryTriggered += Chessboard_OnVictoryTriggered;
-        chessboard.OnDefeatTriggered += Chessboard_OnDefeatTriggered;
-        chessboard.OnStalemateTriggered += Chessboard_OnStalemateTriggered;
         chessboard.OnSlideTriggered += Chessboard_OnSlideTriggered;
-        chessboard.OnTickingTriggered += Chessboard_OnTickingTriggered;
+        GameUIManager.Instance.OnTickingTriggered += GameUIManager_OnTickingTriggered;
     }
 
     public bool ChangeVolumeEnabled() {
@@ -47,7 +44,11 @@ public class SoundManager : MonoBehaviour {
         return isVolumeEnabled;
     }
 
-    private void Chessboard_OnTickingTriggered(object sender, EventArgs e) {
+    public void StopAudio() {
+        audioSource.Stop();
+    }
+
+    private void GameUIManager_OnTickingTriggered(object sender, EventArgs e) {
         if(isVolumeEnabled) audioSource.PlayOneShot(tickingSound);
     }
 
@@ -75,19 +76,15 @@ public class SoundManager : MonoBehaviour {
         if (isVolumeEnabled) audioSource.PlayOneShot(checkSound);
     }
 
-    private void Chessboard_OnVictoryTriggered(object sender, EventArgs e) {
-        if (isVolumeEnabled) audioSource.PlayOneShot(victorySound);
-    }
-
-    private void Chessboard_OnDefeatTriggered(object sender, EventArgs e) {
-        if (isVolumeEnabled) audioSource.PlayOneShot(defeatSound);
-    }
-
-    private void Chessboard_OnStalemateTriggered(object sender, EventArgs e) {
-        if (isVolumeEnabled) audioSource.PlayOneShot(stalemateSound);
-    }
-
     private void Chessboard_OnSlideTriggered(object sender, EventArgs e) {
         if (isVolumeEnabled) audioSource.PlayOneShot(slideSound);
+    }
+
+    public void PlayEndGameSound(int winningTeam, int startingTeam) {
+        if (isVolumeEnabled) {
+            if (winningTeam == 2) audioSource.PlayOneShot(stalemateSound);
+            else if (startingTeam != winningTeam) audioSource.PlayOneShot(defeatSound);
+            else audioSource.PlayOneShot(victorySound);
+        }
     }
 }

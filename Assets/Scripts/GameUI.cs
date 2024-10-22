@@ -103,6 +103,22 @@ public class GameUI : MonoBehaviour
         NetUtility.C_START_GAME += OnStartGameClient;
     }
 
+    public void OnCameraRotationButton() {
+        GameUIManager.Instance.ToggleCameraRotation();
+    }
+
+    public void OnVolumeButton() {
+        GameUIManager.Instance.ToggleVolume();
+    }
+
+    public void OnSavedMatchesButton() {
+        ReplayManager.Instance.EnableSavedMatchesUI();
+    }
+
+    public void OnSavedMatchesBackButton() {
+        ReplayManager.Instance.DisableSavedMatchesUI();
+    }
+
     private void UnRegisterEvents() {
         NetUtility.C_START_GAME -= OnStartGameClient;
     }
