@@ -1,10 +1,8 @@
 using UnityEngine;
-using System.Collections.Generic;
 using System;
 
 public class SoundManager : MonoBehaviour {
     [SerializeField] private AudioSource audioSource;
-    [SerializeField] private Chessboard chessboard;
 
     public static SoundManager Instance { get; private set; }
 
@@ -29,13 +27,13 @@ public class SoundManager : MonoBehaviour {
     void Start() {
         audioSource = GetComponent<AudioSource>();
 
-        chessboard.OnMoveTriggered += Chessboard_OnMoveTriggered;
-        chessboard.OnCaptureMoveTriggered += Chessboard_OnCaptureMoveTriggered;
-        chessboard.OnEnPassantTriggered += Chessboard_OnEnPassantTriggered;
-        chessboard.OnPromotionTriggered += Chessboard_OnPromotionTriggered;
-        chessboard.OnCastlingTriggered += Chessboard_OnCastlingTriggered;
-        chessboard.OnCheckTriggered += Chessboard_OnCheckTriggered;
-        chessboard.OnSlideTriggered += Chessboard_OnSlideTriggered;
+        Utilities.Instance.OnMoveTriggered += Utilities_OnMoveTriggered;
+        Utilities.Instance.OnCaptureMoveTriggered += Utilities_OnCaptureMoveTriggered;
+        Utilities.Instance.OnEnPassantTriggered += Utilities_OnEnPassantTriggered;
+        Utilities.Instance.OnPromotionTriggered += Utilities_OnPromotionTriggered;
+        Utilities.Instance.OnCastlingTriggered += Utilities_OnCastlingTriggered;
+        Utilities.Instance.OnCheckTriggered += Utilities_OnCheckTriggered;
+        Utilities.Instance.OnSlideTriggered += Utilities_OnSlideTriggered;
         GameUIManager.Instance.OnTickingTriggered += GameUIManager_OnTickingTriggered;
     }
 
@@ -52,31 +50,31 @@ public class SoundManager : MonoBehaviour {
         if(isVolumeEnabled) audioSource.PlayOneShot(tickingSound);
     }
 
-    private void Chessboard_OnMoveTriggered(object sender, EventArgs e) {
+    private void Utilities_OnMoveTriggered(object sender, EventArgs e) {
         if (isVolumeEnabled) audioSource.PlayOneShot(moveSound);
     }
 
-    private void Chessboard_OnCaptureMoveTriggered(object sender, EventArgs e) {
+    private void Utilities_OnCaptureMoveTriggered(object sender, EventArgs e) {
         if (isVolumeEnabled) audioSource.PlayOneShot(captureSound);
     }
 
-    private void Chessboard_OnEnPassantTriggered(object sender, EventArgs e) {
+    private void Utilities_OnEnPassantTriggered(object sender, EventArgs e) {
         if (isVolumeEnabled) audioSource.PlayOneShot(enPassantSound);
     }
 
-    private void Chessboard_OnPromotionTriggered(object sender, EventArgs e) {
+    private void Utilities_OnPromotionTriggered(object sender, EventArgs e) {
         if (isVolumeEnabled) audioSource.PlayOneShot(promotionSound);
     }
 
-    private void Chessboard_OnCastlingTriggered(object sender, EventArgs e) {
+    private void Utilities_OnCastlingTriggered(object sender, EventArgs e) {
         if (isVolumeEnabled) audioSource.PlayOneShot(castlingSound);
     }
 
-    private void Chessboard_OnCheckTriggered(object sender, EventArgs e) {
+    private void Utilities_OnCheckTriggered(object sender, EventArgs e) {
         if (isVolumeEnabled) audioSource.PlayOneShot(checkSound);
     }
 
-    private void Chessboard_OnSlideTriggered(object sender, EventArgs e) {
+    private void Utilities_OnSlideTriggered(object sender, EventArgs e) {
         if (isVolumeEnabled) audioSource.PlayOneShot(slideSound);
     }
 

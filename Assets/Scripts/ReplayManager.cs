@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using TMPro;
+using UnityEngine.UI;
 
 [System.Serializable]
 public class MoveData {
@@ -33,6 +34,8 @@ public class ReplayManager : MonoBehaviour {
     [SerializeField] private GameObject replayPrefab; // Prefab to display replay info in the UI
     [SerializeField] private Transform savedMatchesUI; // Parent transform for the replay prefabs
     [SerializeField] private TMP_InputField saveNameInputField;
+    [SerializeField] private GameObject replayUI;
+    [SerializeField] private TextMeshProUGUI moveText;
 
     // Pagination
     private int currentPage = 0;
@@ -98,6 +101,10 @@ public class ReplayManager : MonoBehaviour {
         saveNameInputField.text = text;
     }
 
+    public void SetMoveText(string text) {
+        moveText.text = text;
+    }
+
     public void LoadReplays() {
 
         string[] replayFiles = Directory.GetFiles(replayFolderPath, "*.json");
@@ -109,7 +116,7 @@ public class ReplayManager : MonoBehaviour {
                     string json = File.ReadAllText(replayFile);
                     ReplayData replayData = JsonUtility.FromJson<ReplayData>(json);
 
-                    if (IsValidReplayData(replayData))
+                    if (Utilities.Instance.IsValidReplayData(replayData))
                     {
                         replayDataList.Add(replayData);
                         loadedReplayFiles.Add(replayFile);
@@ -187,55 +194,103 @@ public class ReplayManager : MonoBehaviour {
         ShowPage(currentPage);
     }
 
-    public bool IsValidReplayData(ReplayData replayData) {
-        if (replayData.moveList == null) {
-            return false;
+    // Helper method to set button interactability by index
+    private void SetButtonsInteractable(bool isInteractable, params int[] buttonIndices) {
+        foreach (int index in buttonIndices) {
+            replayUI.transform.GetChild(index).gameObject.GetComponent<Button>().interactable = isInteractable;
         }
+    }
 
-        if (replayData.moveList.Count < 0) {
-            return false;
+    // Helper method to show or hide buttons by index
+    private void SetButtonsActive(bool isActive, params int[] buttonIndices) {
+        foreach (int index in buttonIndices) {
+            replayUI.transform.GetChild(index).gameObject.SetActive(isActive);
         }
+    }
 
-        // Validate all moves in moveList
-        foreach (MoveData move in replayData.moveList) {
-            if (move.start.x < 0 || move.start.x > 7 || move.start.y < 0 || move.start.y > 7 ||
-                move.end.x < 0 || move.end.x > 7 || move.end.y < 0 || move.end.y > 7) {
-                return false;
-            }
+    // Helper method to update move text based on the state
+    private void UpdateMoveText(string newText) {
+        moveText.text = newText.Trim();
+    }
+
+    public void HandleUIPause() {
+        UpdateMoveText(moveText.text.Replace("(Press P to Pause)\n", "Paused\n"));
+        // Re-enable replay buttons
+        SetButtonsInteractable(true, 0, 1, 3, 4);
+    }
+
+    public void HandleUIFastForward() {
+        SetButtonsInteractable(false, 0, 1);
+    }
+
+    public void HandleUIStopFastForward() {
+        SetButtonsInteractable(true, 0);
+        SetButtonsInteractable(false, 4);
+        UpdateMoveText(moveText.text.Replace("(Press P to Pause)\n", ""));
+    }
+
+    public void HandleUIFastBackward() {
+        SetButtonsInteractable(false, 3, 4);
+    }
+
+    public void HandleUIStopFastBackward() {
+        SetButtonsInteractable(false, 0);
+        SetButtonsInteractable(true, 3, 4);
+        UpdateMoveText(moveText.text.Replace("(Press P to Pause)\n", ""));
+    }
+
+    public void HandleReplayCheckmate() {
+        replayUI.gameObject.SetActive(false);
+    }
+
+    public void HandleReplayGoingOnRematch() {
+        HandleReplayGoingOnMenu(); // Reuse the same logic
+    }
+
+    public void HandleReplayGoingOnMenu() {
+        replayUI.gameObject.SetActive(false);
+        SetButtonsActive(false, 0, 1, 3, 4);
+        moveText.gameObject.SetActive(false);
+    }
+
+    public void HandleGoingOnReplay() {
+        replayUI.gameObject.SetActive(true);
+        SetButtonsActive(true, 0, 1, 3, 4);
+        SetButtonsInteractable(false, 0, 1);
+        SetButtonsInteractable(true, 3, 4);
+        moveText.gameObject.SetActive(true);
+        UpdateMoveText(""); // Clear the move text
+    }
+
+    public void EnableUIOnForward() {
+        SetButtonsInteractable(true, 0, 1, 4);
+    }
+
+    public void ModifyMoveTextForward(bool isFastForwarding, string moveNotation) {
+        string newText = isFastForwarding ? "(Press P to Pause)\n" + moveNotation : moveNotation;
+        UpdateMoveText(newText);
+    }
+
+    public void DisableUIOnForward() {
+        SetButtonsInteractable(false, 3, 4);
+    }
+
+    public void EnableUIOnBackward() {
+        SetButtonsInteractable(true, 0, 3, 4);
+    }
+
+    public void ModifyMoveTextBackward(bool isFastReversing, string moveNotation) {
+        string newText = isFastReversing ? "(Press P to Pause)\n" + moveNotation : moveNotation;
+        UpdateMoveText(newText);
+
+        if (!isFastReversing) {
+            SoundManager.Instance.StopAudio();
+            Utilities.Instance.TriggerSlidingSound();
         }
+    }
 
-        // Check if chosenPieces, chosenPiecesPromotionPositions, and promotionMoveIndexList all have the same count
-        if (replayData.chosenPieces.Count != replayData.chosenPiecesPromotionPositions.Count ||
-            replayData.chosenPieces.Count != replayData.promotionMoveIndexList.Count) {
-            return false; // The number of chosen pieces, promotion positions, and promotion indexes must match
-        }
-
-        // Check if each promotion position is within valid board range (0 to 7)
-        foreach (var promotionPos in replayData.chosenPiecesPromotionPositions) {
-            if (promotionPos.x < 0 || promotionPos.x > 7 || promotionPos.y < 0 || promotionPos.y > 7) {
-                return false; // Invalid promotion position, out of bounds
-            }
-        }
-
-        // Ensure promotionMoveIndexList values are within the valid range for the move list
-        foreach (var promotionIndex in replayData.promotionMoveIndexList) {
-            if (promotionIndex < 0 || promotionIndex >= replayData.moveList.Count) {
-                return false; // Invalid promotion index, out of bounds of the move list
-            }
-        }
-
-        // Check if startingTeam is valid (0 to 3)
-        if (replayData.startingTeam < 0 || replayData.startingTeam > 1) {
-            return false; // Invalid startingTeam
-        }
-
-        // Check if winningTeam is valid (0 to 3)
-        if (replayData.winningTeam < 0 || replayData.winningTeam > 3) {
-            return false; // Invalid winningTeam
-        }
-
-        // If all checks pass, the replay data is valid
-        return true;
+    public void DisableUIOnBackward() {
+        SetButtonsInteractable(false, 0, 1);
     }
 
 }

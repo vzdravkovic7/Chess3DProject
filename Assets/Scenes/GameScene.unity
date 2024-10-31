@@ -554,6 +554,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c98cf724286d60439856b716ed0584a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chessboard: {fileID: 1686878251}
 --- !u!4 &156975607
 Transform:
   m_ObjectHideFlags: 0
@@ -1806,8 +1807,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1686878251}
-        m_TargetAssemblyTypeName: Chessboard, Assembly-CSharp
+      - m_Target: {fileID: 156975606}
+        m_TargetAssemblyTypeName: ReplayGameManager, Assembly-CSharp
         m_MethodName: OnFastForwardButton
         m_Mode: 1
         m_Arguments:
@@ -3639,8 +3640,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1686878251}
-        m_TargetAssemblyTypeName: Chessboard, Assembly-CSharp
+      - m_Target: {fileID: 156975606}
+        m_TargetAssemblyTypeName: ReplayGameManager, Assembly-CSharp
         m_MethodName: OnFastBackwardButton
         m_Mode: 1
         m_Arguments:
@@ -3771,8 +3772,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1686878251}
-        m_TargetAssemblyTypeName: Chessboard, Assembly-CSharp
+      - m_Target: {fileID: 156975606}
+        m_TargetAssemblyTypeName: ReplayGameManager, Assembly-CSharp
         m_MethodName: OnForwardButton
         m_Mode: 1
         m_Arguments:
@@ -3903,8 +3904,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1686878251}
-        m_TargetAssemblyTypeName: Chessboard, Assembly-CSharp
+      - m_Target: {fileID: 156975606}
+        m_TargetAssemblyTypeName: ReplayGameManager, Assembly-CSharp
         m_MethodName: OnBackwardButton
         m_Mode: 1
         m_Arguments:
@@ -7636,6 +7637,8 @@ MonoBehaviour:
     type: 3}
   savedMatchesUI: {fileID: 1262417194}
   saveNameInputField: {fileID: 679358115}
+  replayUI: {fileID: 696430679}
+  moveText: {fileID: 688761910}
 --- !u!4 &1627585473
 Transform:
   m_ObjectHideFlags: 0
@@ -7808,8 +7811,6 @@ MonoBehaviour:
   deathSize: 0.45
   deathSpacing: 0.5
   dragOffset: 1
-  replayUI: {fileID: 696430679}
-  moveText: {fileID: 688761910}
   prefabs:
   - {fileID: 8385778544984517574, guid: 5e2f425a4335cd8428cf4373078d4924, type: 3}
   - {fileID: 4172319373074576376, guid: 2337f1323b25c834183fb5bce08cdc4a, type: 3}
@@ -7817,6 +7818,7 @@ MonoBehaviour:
   - {fileID: 9062362832498608937, guid: deb57418d02632e41b906b92b9fdb9cd, type: 3}
   - {fileID: 6278865568535691943, guid: 3d1170e428b4b6c49acc7b72ec1fd83f, type: 3}
   - {fileID: 3311667488009234568, guid: 9406d74a1e485ff4c8dad0f0dea9fb79, type: 3}
+  specialMove: 0
 --- !u!1 &1700811103
 GameObject:
   m_ObjectHideFlags: 0

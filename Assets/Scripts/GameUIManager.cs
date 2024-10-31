@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -151,6 +152,7 @@ public class GameUIManager : MonoBehaviour
         inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(true);
         inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(true);
         inGameOptionsUI.gameObject.SetActive(true);
+        ReplayManager.Instance.HandleReplayGoingOnRematch();
     }
 
     public void HandleGoingOnMenu() {
@@ -161,6 +163,7 @@ public class GameUIManager : MonoBehaviour
         inGameOptionsUI.gameObject.SetActive(false);
         inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(true);
         inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(true);
+        ReplayManager.Instance.HandleReplayGoingOnMenu();
     }
 
     public void HandleGoingOnReplay() {
@@ -171,6 +174,7 @@ public class GameUIManager : MonoBehaviour
         inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(false);
         inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(false);
         inGameOptionsUI.gameObject.SetActive(false);
+        ReplayManager.Instance.HandleGoingOnReplay();
     }
 
     public void HandleGameStart(float currentTime, bool localGame) {
@@ -184,6 +188,7 @@ public class GameUIManager : MonoBehaviour
     }
 
     public void HandleCheckmate() {
+        ReplayManager.Instance.HandleReplayCheckmate();
         matchUI.transform.GetChild(0).gameObject.SetActive(false);
         inGameOptionsUI.transform.GetChild(0).gameObject.SetActive(false);
         inGameOptionsUI.transform.GetChild(1).gameObject.SetActive(false);
@@ -209,5 +214,41 @@ public class GameUIManager : MonoBehaviour
         victoryScreen.transform.GetChild(1).gameObject.SetActive(false);
         victoryScreen.transform.GetChild(2).gameObject.SetActive(false);
         victoryScreen.SetActive(false);
+    }
+
+    public void HighlightTiles(ref List<Vector2Int> availableMoves, ref ChessPiece[,] chessPieces, ref GameObject[,] tiles, SpecialMove specialMove, int previousCount, bool isCheck, ChessPiece targetKing) {
+        for (int i = 0; i < availableMoves.Count; i++)
+            if (chessPieces[availableMoves[i].x, availableMoves[i].y] != null)
+                tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("CaptureHighlight");
+            else
+                tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("Highlight");
+
+        if (specialMove == SpecialMove.Promotion)
+            try {
+                if (tiles[availableMoves[0].x, availableMoves[0].y].layer != LayerMask.NameToLayer("CaptureHighlight"))
+                    tiles[availableMoves[0].x, availableMoves[0].y].layer = LayerMask.NameToLayer("SpecialHighlight");
+            } catch (ArgumentOutOfRangeException) {
+
+            }
+
+        if (previousCount != availableMoves.Count) {
+            for (int i = previousCount; i < availableMoves.Count; i++) {
+                if (tiles[availableMoves[i].x, availableMoves[i].y].layer != LayerMask.NameToLayer("CaptureHighlight"))
+                    tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("SpecialHighlight");
+            }
+        }
+
+        if (isCheck) tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("KingCheck");
+    }
+
+    public void RemoveHighlightTiles(ref List<Vector2Int> availableMoves, ref ChessPiece[,] chessPieces, ref GameObject[,] tiles) {
+        for (int i = 0; i < availableMoves.Count; i++)
+            tiles[availableMoves[i].x, availableMoves[i].y].layer = LayerMask.NameToLayer("Tile");
+
+        availableMoves.Clear();
+    }
+
+    public void RemoveCheckHighlight(ref GameObject[,] tiles, ChessPiece targetKing) {
+        tiles[targetKing.currentX, targetKing.currentY].layer = LayerMask.NameToLayer("Tile");
     }
 }
